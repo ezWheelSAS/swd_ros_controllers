@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+
+    <node pkg="drive_controller" name="drive_controller" type="drive_controller" output="screen">
+        <rosparam param="pub_freq_hz">10</rosparam>
+        <rosparam param="list_of_dbus_smc_services">["commonapi.ezw.smcservice.drive"]</rosparam>
+        <rosparam param="watchdog_receive_ms">500</rosparam>
+    </node>
+
+</launch>
