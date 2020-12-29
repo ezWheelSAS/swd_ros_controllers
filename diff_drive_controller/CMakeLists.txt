@@ -334,13 +334,13 @@ add_definitions(
 #------------------------------------------------------------------------------
 # ROS generate messages
 #------------------------------------------------------------------------------
-generate_messages(
-  DEPENDENCIES
-  geometry_msgs
-  std_msgs
-  nav_msgs
-  sensor_msgs
-)
+# generate_messages(
+#   DEPENDENCIES
+#   geometry_msgs
+#   std_msgs
+#   nav_msgs
+#   sensor_msgs
+# )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
