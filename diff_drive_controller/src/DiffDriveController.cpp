@@ -23,7 +23,7 @@ using namespace std::chrono_literals;
 namespace ezw {
     namespace diffdrivecontroller
     {
-DifferentialWheels::DifferentialWheels(const std::shared_ptr<ros::NodeHandle> nh)
+DiffDriveController::DiffDriveController(const std::shared_ptr<ros::NodeHandle> nh)
     : m_nh(nh)
 {
     m_clientLeft = ezw::smcservice::DBusClient();
@@ -31,7 +31,7 @@ DifferentialWheels::DifferentialWheels(const std::shared_ptr<ros::NodeHandle> nh
     m_pubOdom = m_nh->advertise<nav_msgs::Odometry>("odom", 5);
     m_pubJointState = m_nh->advertise<sensor_msgs::JointState>("joint_state", 5);
     m_subSetSpeed =
-        m_nh->subscribe("set_speed", 5, &DifferentialWheels::cbSetSpeed, this);
+        m_nh->subscribe("set_speed", 5, &DiffDriveController::cbSetSpeed, this);
 
     ROS_INFO("Node name : %s", ros::this_node::getName().c_str());
 
@@ -99,13 +99,13 @@ DifferentialWheels::DifferentialWheels(const std::shared_ptr<ros::NodeHandle> nh
     if(m_rightMotorInitialized) m_clientRight.getOdometry(m_dRight_prev); // en mm
 
     m_timerOdom = m_nh->createTimer(ros::Duration(1 / m_pub_freq_hz),
-                                    boost::bind(&DifferentialWheels::cbTimerOdom, this));
+                                    boost::bind(&DiffDriveController::cbTimerOdom, this));
     m_timerWatchdog =
         m_nh->createTimer(ros::Duration(m_watchdog_receive_ms / 1000.0),
-                          boost::bind(&DifferentialWheels::cbWatchdog, this));
+                          boost::bind(&DiffDriveController::cbWatchdog, this));
 }
 
-void DifferentialWheels::cbTimerOdom()
+void DiffDriveController::cbTimerOdom()
 {
     nav_msgs::Odometry msgOdom;
     sensor_msgs::JointState msgJoint;
@@ -174,7 +174,7 @@ void DifferentialWheels::cbTimerOdom()
 ///
 /// \brief Change wheel speed (msg.x = left motor, msg.y = right motor) rad/s
 ///
-void DifferentialWheels::cbSetSpeed(const geometry_msgs::PointConstPtr& speed)
+void DiffDriveController::cbSetSpeed(const geometry_msgs::PointConstPtr& speed)
 {
     m_timerWatchdog.stop();
     m_timerWatchdog.start();
@@ -193,7 +193,7 @@ void DifferentialWheels::cbSetSpeed(const geometry_msgs::PointConstPtr& speed)
 /// \brief Callback qui s'active si aucun message de déplacement n'est reçu depuis
 /// m_watchdog_receive_ms
 ///
-void DifferentialWheels::cbWatchdog()
+void DiffDriveController::cbWatchdog()
 {
     geometry_msgs::PointPtr msg(new geometry_msgs::Point);
     msg->x = 0;
