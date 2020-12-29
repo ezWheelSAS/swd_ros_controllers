@@ -373,7 +373,7 @@ add_definitions(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES d_wheels
+#  LIBRARIES diff_drive_controller
 #  CATKIN_DEPENDS roscpp std_msgs
 #  DEPENDS system_lib
 )
@@ -456,6 +456,5 @@ install(TARGETS ${PROJECT_NAME}
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 install(FILES
    ${CMAKE_CURRENT_SOURCE_DIR}/launch/main.launch
-   # myfile2
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
