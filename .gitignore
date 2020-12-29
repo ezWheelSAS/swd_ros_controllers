@@ -1,0 +1,12 @@
+build*/*
+bin/*
+lib/*
+image*/*
+examples/build*/*
+examples/image*/*
+docs/html/*
+docs/latex/*
+docs/man/*
+docs/Doxyfile
+.vscode/*
+*.pc
