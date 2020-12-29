@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+
+    <node pkg="diff_drive_controller" name="diff_drive_controller" type="diff_drive_controller"
+        output="screen">
+        <rosparam param="baseline_m">0.20</rosparam>
+        <rosparam param="pub_freq_hz">1</rosparam>
+        <rosparam param="left_dbus_smc_service">"commonapi.ezw.smcservice.left"</rosparam>
+        <rosparam param="right_dbus_smc_service">"commonapi.ezw.smcservice.right"</rosparam>
+        <rosparam param="watchdog_receive_ms">10000</rosparam>
+    </node>
+
+</launch>

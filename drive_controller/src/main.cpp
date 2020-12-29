@@ -38,13 +38,13 @@ int main(int argc, char** argv)
         exit(-1);
     }
 
-    std::vector<std::shared_ptr<DriveController>> listClients;
+    std::vector<std::shared_ptr<ezw::drivecontroller::DriveController>> listClients;
 
     for(const std::string& name : list_of_dbus_smc_services)
     {
         ROS_INFO("Name : %s", name.c_str());
         listClients.push_back(
-            std::make_shared<DriveController>(name, &nh, watchdog_receive_ms, pub_freq_hz));
+            std::make_shared<ezw::drivecontroller::DriveController>(name, &nh, watchdog_receive_ms, pub_freq_hz));
     }
     ros::spin();
 }
