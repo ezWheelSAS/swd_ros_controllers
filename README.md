@@ -3,8 +3,9 @@ This package contains two ROS nodes:
 - `drive_controller` : A ROS controller for a single/multiple ez-Wheel Gen2 wheels individually.
 - `diff_drive_controller` : A ROS controller for a differential-drive mobile robot (2 wheels).
 
+
 ## The `drive_controller` node
-This driver manages __N__ ez-Wheel Gen2 wheels independently.
+This node manages __N__ ez-Wheel Gen2 wheels independently.
 
 ### Topics Published
 For each wheel :
@@ -18,6 +19,7 @@ For each wheel :
 + `pub_freq_hz` : (__`int`__) Publication frequency of joint state (Hz)
 + `watchdog_receive_ms` : (__`int`__) Watchdog delay before stopping the wheels if no command is received
 + `list_of_dbus_smc_services` : (__`vector<string>`__) List of dbus smc services corresponding to the wheels
+
 
 ## The `diff_drive_controller` node
 This controller drives two ez-Wheel Gen2 wheels as a differential-drive robot.
