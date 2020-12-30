@@ -18,22 +18,22 @@ namespace ezw {
     {
         class DriveController
         {
-        public:
-            DriveController(const std::string& name, ros::NodeHandle* node,  int watchdogTimeout, int pubFreqHz);
+            public:
+                DriveController(const std::string &name, ros::NodeHandle *node, int watchdogTimeout, int pubFreqHz);
 
-        private:
-            ezw::smcservice::DBusClient	m_dbusClient;
-            std::shared_ptr<ros::NodeHandle> m_nodeHandle;
-            const std::string& m_name;
-            ros::Publisher m_pubJointState;
-            ros::Subscriber m_subSetSpeed;
-            int m_pos_prev;
-            ros::Timer m_timerOdom, m_timerWatchdog;
-            int m_pub_freq_hz, m_watchdog_receive_ms;
+            private:
+                ezw::smcservice::DBusClient m_dbusClient;
+                std::shared_ptr<ros::NodeHandle> m_nodeHandle;
+                const std::string &m_name;
+                ros::Publisher m_pubJointState;
+                ros::Subscriber m_subSetSpeed;
+                int m_pos_prev;
+                ros::Timer m_timerOdom, m_timerWatchdog;
+                int m_pub_freq_hz, m_watchdog_receive_ms;
 
-            void cbSetSpeed(std_msgs::Float64::Ptr speed);
-            void cbTimerOdom();
-            void cbWatchdog();
+                void cbSetSpeed(std_msgs::Float64::Ptr speed);
+                void cbTimerOdom();
+                void cbWatchdog();
         };
     }
 }

@@ -16,29 +16,29 @@
 namespace ezw {
     namespace diffdrivecontroller
     {
-class DiffDriveController
-{
-public:
-    DiffDriveController(const std::shared_ptr<ros::NodeHandle>);
+        class DiffDriveController
+        {
+            public:
+                DiffDriveController(const std::shared_ptr<ros::NodeHandle>);
 
-private:
-    ros::Publisher m_pubOdom, m_pubJointState;
-    ros::Subscriber m_subSetSpeed;
-    std::shared_ptr<ros::NodeHandle> m_nh;
+            private:
+                ros::Publisher m_pubOdom, m_pubJointState;
+                ros::Subscriber m_subSetSpeed;
+                std::shared_ptr<ros::NodeHandle> m_nh;
 
-    // Param
-    double m_baseline_m;
-    int m_pub_freq_hz, m_watchdog_receive_ms;
-    std::string m_left_motor_name, m_right_motor_name;
+                // Param
+                double m_baseline_m;
+                int m_pub_freq_hz, m_watchdog_receive_ms;
+                std::string m_left_motor_name, m_right_motor_name;
 
-    ros::Timer m_timerOdom, m_timerWatchdog;
-    ezw::smcservice::DBusClient m_clientRight, m_clientLeft;
-    double m_x_prev = 0, m_y_prev = 0, m_theta_prev = 0;
-    bool m_rightMotorInitialized = false, m_leftMotorInitialized = false;
-    int32_t m_dLeft_prev = 0, m_dRight_prev = 0;
+                ros::Timer m_timerOdom, m_timerWatchdog;
+                ezw::smcservice::DBusClient m_clientRight, m_clientLeft;
+                double m_x_prev = 0, m_y_prev = 0, m_theta_prev = 0;
+                bool m_rightMotorInitialized = false, m_leftMotorInitialized = false;
+                int32_t m_dLeft_prev = 0, m_dRight_prev = 0;
 
-    void cbSetSpeed(const geometry_msgs::PointConstPtr& speed);
-    void cbTimerOdom(), cbWatchdog();
-};
+                void cbSetSpeed(const geometry_msgs::PointConstPtr &speed);
+                void cbTimerOdom(), cbWatchdog();
+        };
     }
 }
