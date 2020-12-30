@@ -31,7 +31,7 @@ namespace ezw {
 
             std::string lDomainName = "local";
             // std::string lInstanceName = "commonapi.ezw.smcservice.drive";       // drive
-            int lContextId = CON_APP; // Cannaux de log, donc on s'en fout.
+            int lContextId = CON_APP; // Canaux de log, donc on s'en fout.
 
             ROS_INFO("Motor name : %s", m_name.c_str());
 
@@ -73,9 +73,9 @@ namespace ezw {
             ROS_INFO("State motor %s : %d", m_name.c_str(), status);
         }
 
-///
-/// \brief Change wheel speed (rad/s)
-///
+        ///
+        /// \brief Change wheel speed (rad/s)
+        ///
         void DriveController::cbSetSpeed(const std_msgs::Float64::Ptr msg)
         {
             m_timerWatchdog.stop();
@@ -88,10 +88,10 @@ namespace ezw {
             m_dbusClient.setSpeed(speed); // RPM
         }
 
-///
-/// \brief Callback qui s'active si aucun message de déplacement n'est reçu depuis
-/// m_watchdog_receive_ms
-///
+        ///
+        /// \brief Callback qui s'active si aucun message de déplacement n'est reçu depuis
+        /// m_watchdog_receive_ms
+        ///
         void DriveController::cbWatchdog()
         {
             std_msgs::Float64::Ptr msg(new std_msgs::Float64);

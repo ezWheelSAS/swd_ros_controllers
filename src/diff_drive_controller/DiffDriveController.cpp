@@ -47,7 +47,7 @@ namespace ezw {
 
             std::string lDomainName = "local";
             // "commonapi.ezw.smcservice.drive";       // drive
-            int lContextId = CON_APP; // Cannaux de log, donc on s'en fout.
+            int lContextId = CON_APP; // Canaux de log, donc on s'en fout.
 
             ROS_INFO("Right motor name : %s, left : %s", m_right_motor_name.c_str(),
                      m_left_motor_name.c_str());
@@ -170,9 +170,9 @@ namespace ezw {
             ROS_INFO("State right motor : %i", status);
         }
 
-///
-/// \brief Change wheel speed (msg.x = left motor, msg.y = right motor) rad/s
-///
+        ///
+        /// \brief Change wheel speed (msg.x = left motor, msg.y = right motor) rad/s
+        ///
         void DiffDriveController::cbSetSpeed(const geometry_msgs::PointConstPtr &speed)
         {
             m_timerWatchdog.stop();
@@ -192,10 +192,10 @@ namespace ezw {
             }
         }
 
-///
-/// \brief Callback qui s'active si aucun message de déplacement n'est reçu depuis
-/// m_watchdog_receive_ms
-///
+        ///
+        /// \brief Callback qui s'active si aucun message de déplacement n'est reçu depuis
+        /// m_watchdog_receive_ms
+        ///
         void DiffDriveController::cbWatchdog()
         {
             geometry_msgs::PointPtr msg(new geometry_msgs::Point);
