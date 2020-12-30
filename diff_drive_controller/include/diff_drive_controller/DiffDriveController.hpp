@@ -4,7 +4,8 @@
  * @file DiffDriveController.hpp
  */
 
-#pragma once
+#ifndef EZW_ROSCONTROLLERS_DIFFDRIVECONTROLLER_HPP
+#define EZW_ROSCONTROLLERS_DIFFDRIVECONTROLLER_HPP
 
 #include <ezw-smc-service/DBusClient.hpp>
 
@@ -42,3 +43,5 @@ namespace ezw {
         };
     }
 }
+
+#endif /* EZW_ROSCONTROLLERS_DIFFDRIVECONTROLLER_HPP */

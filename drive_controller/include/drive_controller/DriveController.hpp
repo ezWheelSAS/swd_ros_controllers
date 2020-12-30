@@ -4,7 +4,8 @@
  * @file DriveController.hpp
  */
 
-#pragma once
+#ifndef EZW_ROSCONTROLLERS_DRIVECONTROLLER_HPP
+#define EZW_ROSCONTROLLERS_DRIVECONTROLLER_HPP
 
 #include "ezw-smc-service/DBusClient.hpp"
 
@@ -37,3 +38,5 @@ namespace ezw {
         };
     }
 }
+
+#endif /* EZW_ROSCONTROLLERS_DRIVECONTROLLER_HPP */
