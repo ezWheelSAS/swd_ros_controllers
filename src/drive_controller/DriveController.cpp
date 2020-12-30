@@ -30,7 +30,7 @@ namespace ezw {
                                                     &DriveController::cbSetSpeed, this);
 
             std::string lDomainName = "local";
-            //      std::string lInstanceName = "commonapi.ezw.smcservice.drive";       // drive
+            // std::string lInstanceName = "commonapi.ezw.smcservice.drive";       // drive
             int lContextId = CON_APP; // Cannaux de log, donc on s'en fout.
 
             ROS_INFO("Motor name : %s", m_name.c_str());

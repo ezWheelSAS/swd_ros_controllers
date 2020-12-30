@@ -17,10 +17,22 @@
 namespace ezw {
     namespace diffdrivecontroller
     {
+        /**
+         * @brief Differential Drive Controller for ez-Wheel Gen2 wheels
+         *        It subscribes to the `/node/set_speed` topic (of type `geometry_msgs::Point`)
+         *        The `x`, `y` components of the `/set_speed` message represents
+         *        respectively the left and right motor speed in (rad/s)
+         *        The controller publishes the odometry to `/node/odom` and the joint state to `/node/joint_state`
+         */
+
         class DiffDriveController
         {
             public:
-                DiffDriveController(const std::shared_ptr<ros::NodeHandle>);
+                /**
+                 * @brief Class constructor
+                 * @param[in, out] nh ROS node handle
+                 */
+                DiffDriveController(const std::shared_ptr<ros::NodeHandle> nh);
 
             private:
                 ros::Publisher m_pubOdom, m_pubJointState;
