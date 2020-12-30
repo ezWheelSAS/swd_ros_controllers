@@ -4,7 +4,7 @@
  * @file DiffDriveController.cpp
  */
 
-#include <ezw/diff_drive_controller/DiffDriveController.hpp>
+#include <diff_drive_controller/DiffDriveController.hpp>
 
 #include <math.h>
 

@@ -4,7 +4,7 @@
  * @file main.cpp
  */
 
-#include <ezw/diff_drive_controller/DiffDriveController.hpp>
+#include <diff_drive_controller/DiffDriveController.hpp>
 
 #include <ros/console.h>
 #include <ros/ros.h>
