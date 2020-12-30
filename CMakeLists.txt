@@ -5,7 +5,7 @@
 
 # CMake version required ----------------------------------
 cmake_minimum_required(VERSION 3.0)
-project(drive_controller)
+project(ezw_ros_controllers)
 
 if(NOT DEFINED PRJ_VERSION)
     set(PRJ_VERSION "1.0.0")
@@ -146,7 +146,7 @@ find_package(PkgConfig REQUIRED)
 # if(PKG_CONFIG_FOUND)
 #     # Produce a pkg-config file for DBus Client project
 #     configure_file (
-#         ${CMAKE_SOURCE_DIR}/${CMAKE_PROJECT_NAME}-client.pc.in
+#         ${CMAKE_SOURCE_DIR}/${CMAKE_Pezw/diff_drive_controller/ROJECT_NAME}-client.pc.in
 #         ${CMAKE_SOURCE_DIR}/${CMAKE_PROJECT_NAME}-client.pc
 #         @ONLY
 #     )
@@ -373,7 +373,7 @@ add_definitions(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES drive_controller
+#  LIBRARIES ezw_ros_controllers
 #  CATKIN_DEPENDS roscpp std_msgs
 #  DEPENDS system_lib
 )
@@ -393,17 +393,27 @@ catkin_package(
 # )
 
 file(GLOB_RECURSE HEADERS include/*.hpp)
+file(GLOB_RECURSE SOURCES_DRIVE_CTRL src/drive_controller/*.cpp)
+file(GLOB_RECURSE SOURCES_DIFF_CRTL src/diff_drive_controller/*.cpp)
 file(GLOB_RECURSE SOURCES src/*.cpp)
 
-add_executable(${PROJECT_NAME} ${SOURCES} ${COMMON_SOURCES} ${HEADERS})
-add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(drive_controller ${SOURCES_DRIVE_CTRL} ${COMMON_SOURCES} ${HEADERS})
+add_dependencies(drive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(diff_drive_controller ${SOURCES_DIFF_CRTL} ${COMMON_SOURCES} ${HEADERS})
+add_dependencies(diff_drive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 # Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(drive_controller
     ${catkin_LIBRARIES}
     ${EZW_SMC_SERVICE_CLIENT_LIBRARIES}
 )
 
+# Specify libraries to link a library or executable target against
+target_link_libraries(diff_drive_controller
+    ${catkin_LIBRARIES}
+    ${EZW_SMC_SERVICE_CLIENT_LIBRARIES}
+)
 
 ## Fake target to display files in QtCreator
 FILE(GLOB_RECURSE OTHER_FILES
@@ -416,7 +426,13 @@ add_custom_target(other_files SOURCES ${OTHER_FILES})
 ## Install ##
 #############
 
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS drive_controller
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(TARGETS diff_drive_controller
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -434,9 +450,14 @@ install(TARGETS ${PROJECT_NAME}
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS ${PROJECT_NAME}
+
+install(TARGETS drive_controller
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+install(TARGETS diff_drive_controller
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  )
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
@@ -455,6 +476,7 @@ install(TARGETS ${PROJECT_NAME}
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 install(FILES
-   ${CMAKE_CURRENT_SOURCE_DIR}/launch/main.launch
+   ${CMAKE_CURRENT_SOURCE_DIR}/launch/drive_controller.launch
+   ${CMAKE_CURRENT_SOURCE_DIR}/launch/diff_drive_controller.launch
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )

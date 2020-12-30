@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-    <node pkg="diff_drive_controller" name="diff_drive_controller" type="diff_drive_controller"
+    <node pkg="ezw_ros_controllers" name="diff_drive_controller" type="diff_drive_controller"
         output="screen">
         <rosparam param="baseline_m">0.20</rosparam>
         <rosparam param="pub_freq_hz">1</rosparam>
