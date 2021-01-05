@@ -25,7 +25,7 @@ namespace ezw {
             public:
                 /**
                  * @brief Class constructor
-                 * 
+                 *
                  * @param[in] name Motor's name, it will be used for publishing/subscribing to topics,
                  *        each motor will subscribes to `/node/motor_name/set_speed` and publishes
                  *        to the `/node/motor_name/joint_state` topic.

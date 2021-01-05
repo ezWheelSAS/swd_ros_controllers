@@ -69,8 +69,8 @@ namespace ezw {
             m_pos_prev = pos_now;
 
             ezw_app_state_t state;
-            uint8_t status = (uint8_t) m_dbusClient.getAppState(state);
-            ROS_INFO("State motor %s : %d", m_name.c_str(), (uint8_t) state);
+            uint8_t         status = (uint8_t)m_dbusClient.getAppState(state);
+            ROS_INFO("State motor %s : %d", m_name.c_str(), (uint8_t)state);
         }
 
         ///

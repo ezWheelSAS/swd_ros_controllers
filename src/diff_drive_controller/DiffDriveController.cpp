@@ -158,16 +158,16 @@ namespace ezw {
             m_dRight_prev = dRight_now;
 
             ezw_app_state_t state;
-            uint8_t status;
+            uint8_t         status;
             if (m_leftMotorInitialized) {
-                status = (uint8_t) m_clientLeft.getAppState(state);
+                status = (uint8_t)m_clientLeft.getAppState(state);
             }
-            ROS_INFO("State left motor : %i", (uint8_t) state);
+            ROS_INFO("State left motor : %i", (uint8_t)state);
 
             if (m_rightMotorInitialized) {
-                status = (uint8_t) m_clientRight.getAppState(state);
+                status = (uint8_t)m_clientRight.getAppState(state);
             }
-            ROS_INFO("State right motor : %i", (uint8_t) state);
+            ROS_INFO("State right motor : %i", (uint8_t)state);
         }
 
         ///
