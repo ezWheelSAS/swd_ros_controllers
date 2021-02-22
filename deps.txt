@@ -1,0 +1,8 @@
+common-api-3rdparty
+ezw-types
+ezwlog
+ezw-io-service
+ezw-common
+ezw-tools
+ezw-canopen-service
+ezw-smc-service
