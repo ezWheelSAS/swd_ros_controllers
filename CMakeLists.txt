@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.0)
 project(ezw_ros_controllers)
 
 if(NOT DEFINED PRJ_VERSION)
-    set(PRJ_VERSION "1.0.0")
+  set(PRJ_VERSION "1.0.0")
 endif(NOT DEFINED PRJ_VERSION)
 
 
@@ -16,7 +16,8 @@ endif(NOT DEFINED PRJ_VERSION)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
+find_package(
+  catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   nav_msgs
@@ -32,21 +33,23 @@ find_package(catkin REQUIRED COMPONENTS
 
 # Build type
 if(NOT CMAKE_BUILD_TYPE)
-set(CMAKE_BUILD_TYPE Release CACHE STRING
+  set(
+    CMAKE_BUILD_TYPE Release CACHE STRING
     "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
-    FORCE)
+    FORCE
+  )
 endif(NOT CMAKE_BUILD_TYPE)
 
 # CASE OF C PROJECT
 set(CMAKE_C_STANDARD 99)
 if(NOT CMAKE_C_FLAGS)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wformat-security " CACHE STRING "C99 compilation flags" FORCE)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wformat-security " CACHE STRING "C99 compilation flags" FORCE)
 endif(NOT CMAKE_C_FLAGS)
 
 # CASE OF CPP PROJECT
 set(CMAKE_CXX_STANDARD 11)
 if(NOT CMAKE_CXX_FLAGS)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wformat-security" CACHE STRING "C++11 compilation flags" FORCE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wformat-security" CACHE STRING "C++11 compilation flags" FORCE)
 endif(NOT CMAKE_CXX_FLAGS)
 
 
@@ -82,25 +85,19 @@ option(ENABLE_TESTS "Enable Tests" 1)
 # option(ENABLE_DOCS "Build API documentation" ${DOXYGEN_FOUND})
 
 # Module dependencies used as pkgconfig or direct filepath/dirpath
-set(LIST_MODULES_PKG_CONFIG_NAME "ezw-types CommonAPI-DBus ezw-smc-service ezwLog ezw-io-service-client ezw-canopen-service-client ezw-common ezw-tools" CACHE STRING "Lists of pkgconfig modules dependencies" FORCE)
+set(LIST_MODULES_PKG_CONFIG_NAME "ezw-types ezwLog ezw-common ezw-tools ezw-smc-core" CACHE STRING "Lists of pkgconfig modules dependencies" FORCE)
 
 unset(__pkg_config_checked_EZW_TYPES CACHE)
-unset(__pkg_config_checked_CAPI CACHE)
 unset(__pkg_config_checked_EZW_LOG CACHE)
-unset(__pkg_config_checked_EZW_SMC_SERVICE_CLIENT CACHE)
-unset(__pkg_config_checked_EZW_IO_SERVICE_CLIENT CACHE)
-unset(__pkg_config_checked_EZW_CANOPEN_SERVICE_CLIENT CACHE)
 unset(__pkg_config_checked_EZW_TOOLS CACHE)
 unset(__pkg_config_checked_EZW_COMMON CACHE)
+unset(__pkg_config_checked_EZW_SMC_CORE CACHE)
 
 set(EZW_TYPES_PKG_CONFIG_NAME "ezw-types" CACHE STRING "ezw-types pkg config name")
-set(CAPI_PKG_CONFIG_NAME "CommonAPI-DBus" CACHE STRING "Module CAPI_PKG_CONFIG pkg config name")
-set(EZW_SMC_SERVICE_CLIENT_PKG_CONFIG_NAME "ezw-smc-service-client" CACHE STRING "ezw-smc-service-client pkg config name")
 set(EZW_LOG_PKG_CONFIG_NAME "ezwLog" CACHE STRING "ezwLog pkg config name")
-set(EZW_IO_SERVICE_CLIENT_PKG_CONFIG_NAME "ezw-io-service-client" CACHE STRING "ezw-io-service-client pkg config name")
-set(EZW_CANOPEN_SERVICE_CLIENT_PKG_CONFIG_NAME "ezw-canopen-service-client" CACHE STRING "Module ezw-canopen-service-client pkg config name")
 set(EZW_TOOLS_PKG_CONFIG_NAME "ezw-tools" CACHE STRING "Module EZW_TOOLS_CONFIG pkg config name")
 set(EZW_TOOLS_PKG_CONFIG_NAME "ezw-common" CACHE STRING "Module EZW_COMMON_CONFIG pkg config name")
+set(EZW_SMC_CORE_PKG_CONFIG_NAME "ezw-smc-core" CACHE STRING "Module EZW_SMC_CORE_CONFIG pkg config name")
 
 #------------------------------------------------------------------------------
 # Project version
@@ -108,24 +105,26 @@ set(EZW_TOOLS_PKG_CONFIG_NAME "ezw-common" CACHE STRING "Module EZW_COMMON_CONFI
 
 # Get the latest abbreviated commit hash of the working branch
 execute_process(
-    COMMAND git log -1 --format=%h
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_VARIABLE GIT_COMMIT_HASH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
+  COMMAND git log -1 --format=%h
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_COMMIT_HASH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-string(REGEX REPLACE
-    "^([\\.0-9]+).*"
-    "\\1"
-    tmp_VERSION
-    "${PRJ_VERSION}"
+string(
+  REGEX REPLACE
+  "^([\\.0-9]+).*"
+  "\\1"
+  tmp_VERSION
+  "${PRJ_VERSION}"
 )
 
-string(REGEX REPLACE
-    "^([0-9]+)\\..*"
-    "\\1"
-    tmp_SOVERSION
-    "${tmp_VERSION}"
+string(
+  REGEX REPLACE
+  "^([0-9]+)\\..*"
+  "\\1"
+  tmp_SOVERSION
+  "${tmp_VERSION}"
 )
 
 # Major version is for product/marketing purpose
@@ -157,7 +156,8 @@ find_package(PkgConfig REQUIRED)
 # endif (PKG_CONFIG_FOUND)
 
 # Find ROS related packages
-find_package(catkin REQUIRED COMPONENTS
+find_package(
+  catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   nav_msgs
@@ -172,23 +172,20 @@ find_package(catkin REQUIRED COMPONENTS
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-if (HAS_CONFIG)
-    message(STATUS "Adding config from ${CMAKE_SOURCE_DIR}/config/")
-    include_directories(${CMAKE_SOURCE_DIR}/config)
-endif (HAS_CONFIG)
+if(HAS_CONFIG)
+  message(STATUS "Adding config from ${CMAKE_SOURCE_DIR}/config/")
+  include_directories(${CMAKE_SOURCE_DIR}/config)
+endif(HAS_CONFIG)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 # Use project pkg config
 pkg_check_modules(EZW_TYPES REQUIRED ezw-types)
-pkg_check_modules(CAPI REQUIRED CommonAPI-DBus)
-pkg_check_modules(EZW_SMC_SERVICE_CLIENT REQUIRED ezw-smc-service-client)
 pkg_check_modules(EZW_LOG REQUIRED ezwLog)
-pkg_check_modules(EZW_IO_SERVICE_CLIENT REQUIRED ezw-io-service-client)
-pkg_check_modules(EZW_CANOPEN_SERVICE_CLIENT REQUIRED ezw-canopen-service-client)
 pkg_check_modules(EZW_COMMON REQUIRED ezw-common)
 pkg_check_modules(EZW_TOOLS REQUIRED ezw-tools)
+pkg_check_modules(EZW_SMC_CORE REQUIRED ezw-smc-core)
 
 # Here are some values data generated by CMake if the
 # pkg required is found
@@ -202,88 +199,64 @@ pkg_check_modules(EZW_TOOLS REQUIRED ezw-tools)
 #   <XPREFIX>_CFLAGS_OTHER   ... the other compiler flags
 
 # Add include dirs. The case not configured will be empty
-message (STATUS "
+message(STATUS "
 Add inc directory:
 EZW_TYPES_INCLUDE_DIRS : ${EZW_TYPES_INCLUDE_DIRS}
-CAPI_INCLUDE_DIRS : ${CAPI_INCLUDE_DIRS}
-EZW_SMC_SERVICE_CLIENT_INCLUDE_DIRS : ${EZW_SMC_SERVICE_CLIENT_INCLUDE_DIRS}
 EZW_LOG_INCLUDE_DIRS : ${EZW_LOG_INCLUDE_DIRS}
-EZW_IO_SERVICE_CLIENT_INCLUDE_DIRS : ${EZW_IO_SERVICE_CLIENT_INCLUDE_DIRS}
-EZW_CANOPEN_SERVICE_CLIENT_INCLUDE_DIRS : ${EZW_CANOPEN_SERVICE_CLIENT_INCLUDE_DIRS}
 EZW_COMMON_INCLUDE_DIRS : ${EZW_COMMON_INCLUDE_DIRS}
 EZW_TOOLS_INCLUDE_DIRS : ${EZW_TOOLS_INCLUDE_DIRS}
--------------------" )
+EZW_SMC_CORE_INCLUDE_DIRS : ${EZW_SMC_CORE_INCLUDE_DIRS}
+-------------------")
 
 include_directories(
-    ${CMAKE_SOURCE_DIR}/include
-    ${EZW_TYPES_INCLUDE_DIRS}
-    ${CAPI_INCLUDE_DIRS}
-    ${EZW_SMC_SERVICE_CLIENT_INCLUDE_DIRS}
-    ${EZW_LOG_INCLUDE_DIRS}
-    ${EZW_IO_SERVICE_CLIENT_INCLUDE_DIRS}
-    ${EZW_CANOPEN_SERVICE_CLIENT_INCLUDE_DIRS}
-    ${EZW_COMMON_INCLUDE_DIRS}
-    ${EZW_TOOLS_INCLUDE_DIRS}
-    ${catkin_INCLUDE_DIRS}
+  ${CMAKE_SOURCE_DIR}/include
+  ${EZW_TYPES_INCLUDE_DIRS}
+  ${EZW_LOG_INCLUDE_DIRS}
+  ${EZW_COMMON_INCLUDE_DIRS}
+  ${EZW_TOOLS_INCLUDE_DIRS}
+  ${EZW_SMC_CORE_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
 )
 
 # Add library dirs. The case not configured will be empty
-message (STATUS "
+message(STATUS "
 Add library directory:
-CAPI_LIBRARY_DIRS : ${CAPI_LIBRARY_DIRS}
-EZW_SMC_SERVICE_CLIENT_LIBRARY_DIRS : ${EZW_SMC_SERVICE_CLIENT_LIBRARY_DIRS}
 EZW_LOG_LIBRARY_DIRS : ${EZW_LOG_LIBRARY_DIRS}
-EZW_IO_SERVICE_CLIENT_LIBRARY_DIRS : ${EZW_IO_SERVICE_CLIENT_LIBRARY_DIRS}
-EZW_CANOPEN_SERVICE_CLIENT_LIBRARY_DIRS : ${EZW_CANOPEN_SERVICE_CLIENT_LIBRARY_DIRS}
 EZW_COMMON_LIBRARY_DIRS : ${EZW_COMMON_LIBRARY_DIRS}
 EZW_TOOLS_LIBRARY_DIRS : ${EZW_TOOLS_LIBRARY_DIRS}
-------------------------------" )
+EZW_SMC_CORE_LIBRARY_DIRS : ${EZW_SMC_CORE_LIBRARY_DIRS}
+------------------------------")
 
 link_directories(
-    ${EZW_LOG_LIBRARY_DIRS}
-    ${EZW_IO_SERVICE_CLIENT_LIBRARY_DIRS}
-    ${CAPI_LIBRARY_DIRS}
-    ${EZW_SMC_SERVICE_CLIENT_LIBRARY_DIRS}
-    ${EZW_CANOPEN_SERVICE_CLIENT_LIBRARY_DIRS}
-    ${EZW_COMMON_LIBRARY_DIRS}
-    ${EZW_TOOLS_LIBRARY_DIRS}
-    ${catkin_LIBRARY_DIRS}
+  ${EZW_LOG_LIBRARY_DIRS}
+  ${EZW_COMMON_LIBRARY_DIRS}
+  ${EZW_TOOLS_LIBRARY_DIRS}
+  ${EZW_SMC_CORE_LIBRARY_DIRS}
+  ${catkin_LIBRARY_DIRS}
 )
 
 # Add required definitions from pkgconfig
-message (STATUS "
+message(STATUS "
 Add definitions:
-CAPI_CFLAGS : ${CAPI_CFLAGS}
-CAPI_LDFLAGS : ${CAPI_LDFLAGS}
-EZW_SMC_SERVICE_CLIENT_CFLAGS : ${EZW_SMC_SERVICE_CLIENT_CFLAGS}
-EZW_SMC_SERVICE_CLIENT_LDFLAGS : ${EZW_SMC_SERVICE_CLIENT_LDFLAGS}
 EZW_LOG_CFLAGS : ${EZW_LOG_CFLAGS}
 EZW_LOG_LDFLAGS : ${EZW_LOG_LDFLAGS}
-EZW_IO_SERVICE_CLIENT_CFLAGS : ${EZW_IO_SERVICE_CLIENT_CFLAGS}
-EZW_IO_SERVICE_CLIENT_LDFLAGS : ${EZW_IO_SERVICE_CLIENT_LDFLAGS}
-EZW_CANOPEN_SERVICE_CLIENT_CFLAGS : ${EZW_CANOPEN_SERVICE_CLIENT_CFLAGS}
-EZW_CANOPEN_SERVICE_CLIENT_LDFLAGS : ${EZW_CANOPEN_SERVICE_CLIENT_LDFLAGS}
 EZW_COMMON_CFLAGS : ${EZW_COMMON_CFLAGS}
 EZW_COMMON_LDFLAGS : ${EZW_COMMON_LDFLAGS}
 EZW_TOOLS_CFLAGS : ${EZW_TOOLS_CFLAGS}
 EZW_TOOLS_LDFLAGS : ${EZW_TOOLS_LDFLAGS}
-------------------------------" )
+EZW_SMC_CORE_CFLAGS : ${EZW_SMC_CORE_CFLAGS}
+EZW_SMC_CORE_LDFLAGS : ${EZW_SMC_CORE_LDFLAGS}
+------------------------------")
 
 add_definitions(
-    ${CAPI_CFLAGS}
-    ${CAPI_LDFLAGS}
-    ${EZW_SMC_SERVICE_CLIENT_CFLAGS}
-    ${EZW_SMC_SERVICE_CLIENT_LDFLAGS}
-    ${EZW_LOG_CFLAGS}
-    ${EZW_LOG_LDFLAGS}
-    ${EZW_IO_SERVICE_CLIENT_CFLAGS}
-    ${EZW_IO_SERVICE_CLIENT_LDFLAGS}
-    ${EZW_CANOPEN_SERVICE_CLIENT_CFLAGS}
-    ${EZW_CANOPEN_SERVICE_CLIENT_LDFLAGS}
-    ${EZW_COMMON_CFLAGS}
-    ${EZW_COMMON_LDFLAGS}
-    ${EZW_TOOLS_CFLAGS}
-    ${EZW_TOOLS_LDFLAGS}
+  ${EZW_LOG_CFLAGS}
+  ${EZW_LOG_LDFLAGS}
+  ${EZW_COMMON_CFLAGS}
+  ${EZW_COMMON_LDFLAGS}
+  ${EZW_TOOLS_CFLAGS}
+  ${EZW_TOOLS_LDFLAGS}
+  ${EZW_SMC_CORE_CFLAGS}
+  ${EZW_SMC_CORE_LDFLAGS}
 )
 
 #------------------------------------------------------------------------------
@@ -372,10 +345,10 @@ add_definitions(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES ezw_ros_controllers
-#  CATKIN_DEPENDS roscpp std_msgs
-#  DEPENDS system_lib
+  #  INCLUDE_DIRS include
+  #  LIBRARIES ezw_ros_controllers
+  #  CATKIN_DEPENDS roscpp std_msgs
+  #  DEPENDS system_lib
 )
 
 ###########
@@ -404,20 +377,21 @@ add_executable(diff_drive_controller ${SOURCES_DIFF_CRTL} ${COMMON_SOURCES} ${HE
 add_dependencies(diff_drive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 # Specify libraries to link a library or executable target against
-target_link_libraries(drive_controller
-    ${catkin_LIBRARIES}
-    ${EZW_SMC_SERVICE_CLIENT_LIBRARIES}
+target_link_libraries(
+  drive_controller
+  ${catkin_LIBRARIES}
 )
 
 # Specify libraries to link a library or executable target against
-target_link_libraries(diff_drive_controller
-    ${catkin_LIBRARIES}
-    ${EZW_SMC_SERVICE_CLIENT_LIBRARIES}
+target_link_libraries(
+  diff_drive_controller
+  ${catkin_LIBRARIES}
 )
 
 ## Fake target to display files in QtCreator
-FILE(GLOB_RECURSE OTHER_FILES
-    "launch/*"
+file(
+  GLOB_RECURSE OTHER_FILES
+  "launch/*"
 )
 
 add_custom_target(other_files SOURCES ${OTHER_FILES})
@@ -426,13 +400,15 @@ add_custom_target(other_files SOURCES ${OTHER_FILES})
 ## Install ##
 #############
 
-install(TARGETS drive_controller
+install(
+  TARGETS drive_controller
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-install(TARGETS diff_drive_controller
+install(
+  TARGETS diff_drive_controller
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -451,13 +427,15 @@ install(TARGETS diff_drive_controller
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
 
-install(TARGETS drive_controller
+#install(
+#  TARGETS drive_controller
+#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
+
+install(
+  TARGETS diff_drive_controller
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-
-install(TARGETS diff_drive_controller
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  )
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
@@ -475,8 +453,9 @@ install(TARGETS diff_drive_controller
 # )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-install(FILES
-   ${CMAKE_CURRENT_SOURCE_DIR}/launch/drive_controller.launch
-   ${CMAKE_CURRENT_SOURCE_DIR}/launch/diff_drive_controller.launch
-   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+install(
+  FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/launch/drive_controller.launch
+  ${CMAKE_CURRENT_SOURCE_DIR}/launch/diff_drive_controller.launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
