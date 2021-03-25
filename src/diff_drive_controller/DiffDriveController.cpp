@@ -101,18 +101,18 @@ void DiffDriveController::cbTimerOdom() {
   int32_t dLeft_now = 0, dRight_now = 0;
 
   if (m_leftControllerInitialized) {
-    m_clientLeft.getOdometry(dLeft_now); // en mm
+    m_leftController.getOdometry(dLeft_now); // en mm
   }
   if (m_rightControllerInitialized) {
-    m_clientRight.getOdometry(dRight_now); // en mm
+    m_rightController.getOdometry(dRight_now); // en mm
   }
   // Différence de l'odometrie entre t et t+1;
   double dLeft = (dLeft_now - m_dLeft_prev) / 1000.0;
   double dRight = (dRight_now - m_dRight_prev) / 1000.0;
 
   // msg joint
-  msgJoint.name.push_back(m_left_motor_name);
-  msgJoint.name.push_back(m_right_motor_name);
+  msgJoint.name.push_back("left_motor");
+  msgJoint.name.push_back("right_motor");
   msgJoint.position.push_back(dLeft_now / 1000.0);
   msgJoint.position.push_back(dRight_now / 1000.0);
   msgJoint.velocity.push_back(dLeft / m_pub_freq_hz);
@@ -155,12 +155,12 @@ void DiffDriveController::cbTimerOdom() {
   ezw_app_state_t state;
   uint8_t status;
   if (m_leftControllerInitialized) {
-    status = (uint8_t)m_clientLeft.getAppState(state);
+    status = (uint8_t)m_leftController.getAppState(state);
   }
   ROS_INFO("State left motor : %i", (uint8_t)state);
 
   if (m_rightControllerInitialized) {
-    status = (uint8_t)m_clientRight.getAppState(state);
+    status = (uint8_t)m_rightController.getAppState(state);
   }
   ROS_INFO("State right motor : %i", (uint8_t)state);
 }
@@ -181,10 +181,10 @@ void DiffDriveController::cbSetSpeed(
       "Set speed : left -> %f rad/s (%d RPM) // right -> %f rad/s (%d RPM)",
       speed->x, left, speed->y, right);
   if (m_leftControllerInitialized) {
-    m_clientLeft.setSpeed(left); // RPM
+    m_leftController.setSpeed(left); // RPM
   }
   if (m_rightControllerInitialized) {
-    m_clientRight.setSpeed(right);
+    m_rightController.setSpeed(right);
   }
 }
 
