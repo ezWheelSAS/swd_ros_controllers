@@ -5,8 +5,8 @@
         <rosparam param="pub_freq_hz">10</rosparam>
         <rosparam param="motors_dict">
             [
-                {"motor_1", "/path/to/config.ini"},
-                {"motor_2", "/path/to/config2.ini"}
+                {"motor_1", "/opt/ros/share/ezw-ros-controllers/config/motor_1.ini"},
+                {"motor_2", "/opt/ros/share/ezw-ros-controllers/config/motor_2.ini"}
             ]
         </rosparam>
         <rosparam param="watchdog_receive_ms">500</rosparam>
