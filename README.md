@@ -1,6 +1,8 @@
+**ez-Wheel (c) 2021-03-26**
+
 # EZW ROS Controllers
 
-This package contains two ROS nodes:
+This package has been tested on ROS Melodic, it contains two ROS nodes:
 
 -   `drive_controller` : A ROS controller for a single/multiple ez-Wheel Gen2 wheels individually.
 -   `diff_drive_controller` : A ROS controller for a differential-drive mobile robot (2 wheels).
