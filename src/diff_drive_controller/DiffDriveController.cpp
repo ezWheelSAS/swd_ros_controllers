@@ -49,44 +49,45 @@ namespace ezw {
             ROS_INFO("Motors config files, right : %s, left : %s",
                      m_right_config_file.c_str(), m_left_config_file.c_str());
 
+            ezw_error_t err_code;
+
             if ("" != m_right_config_file) {
-                auto errorCodeRight = m_rightController.init(m_right_config_file);
-                if (errorCodeRight == ezw_error_t::ERROR_NONE) {
-                    m_rightControllerInitialized = true;
-                } else {
-                    m_rightControllerInitialized = false;
-                    ROS_ERROR("Right motor initialization error : %d", errorCodeRight);
+                err_code = m_rightController.init(m_right_config_file);
+                if (ezw_error_t::ERROR_NONE != err_code) {
+                    ROS_ERROR("Right motor initialization error : %d", err_code);
+                    return;
                 }
             } else {
-                m_rightControllerInitialized = false;
                 ROS_ERROR("Please specify the right_config_file parameter");
+                return;
             }
 
             if ("" != m_left_config_file) {
-                auto errorCodeLeft = m_leftController.init(m_left_config_file);
-                if (errorCodeLeft == ezw_error_t::ERROR_NONE) {
-                    m_leftControllerInitialized = true;
-                } else {
-                    m_leftControllerInitialized = false;
-                    ROS_ERROR("Left motor initialization error : %d", errorCodeLeft);
+                err_code = m_leftController.init(m_left_config_file);
+                if (ezw_error_t::ERROR_NONE != err_code) {
+                    ROS_ERROR("Left motor initialization error : %d", err_code);
+                    return;
                 }
             } else {
-                m_leftControllerInitialized = false;
                 ROS_ERROR("Please specify the left_config_file parameter");
+                return;
             }
-
-            ezw_log_init("SMCS", "EZW SMC Service for Linux");
 
             // Init
-            if (m_leftControllerInitialized) {
-                m_leftController.getOdometry(m_dLeft_prev); // en mm
+            err_code = m_leftController.getPositionValue(m_dLeft_prev); // en mm
+            if (ezw_error_t::ERROR_NONE != err_code) {
+                ROS_ERROR("Left motor, getPositionValue error: %d", err_code);
+                return;
             }
-            if (m_rightControllerInitialized) {
-                m_rightController.getOdometry(m_dRight_prev); // en mm
+
+            err_code = m_rightController.getPositionValue(m_dRight_prev); // en mm
+            if (ERROR_NONE != err_code) {
+                ROS_ERROR("Right motor, getPositionValue error: %d", err_code);
+                return;
             }
 
             m_timerOdom
-                = m_nh->createTimer(ros::Duration(1 / m_pub_freq_hz),
+                = m_nh->createTimer(ros::Duration(1.0 / m_pub_freq_hz),
                                     boost::bind(&DiffDriveController::cbTimerOdom, this));
             m_timerWatchdog
                 = m_nh->createTimer(ros::Duration(m_watchdog_receive_ms / 1000.0),
@@ -101,12 +102,18 @@ namespace ezw {
             // Toutes les longueurs sont en mètres
             int32_t dLeft_now = 0, dRight_now = 0;
 
-            if (m_leftControllerInitialized) {
-                m_leftController.getOdometry(dLeft_now); // en mm
+            ezw_error_t err_code = m_leftController.getPositionValue(dLeft_now); // en mm
+            if (ezw_error_t::ERROR_NONE != err_code) {
+                ROS_ERROR("Left motor, getPositionValue error: %d", err_code);
+                return;
             }
-            if (m_rightControllerInitialized) {
-                m_rightController.getOdometry(dRight_now); // en mm
+
+            err_code = m_rightController.getPositionValue(dRight_now); // en mm
+            if (ezw_error_t::ERROR_NONE != err_code) {
+                ROS_ERROR("Right motor, getPositionValue error: %d", err_code);
+                return;
             }
+
             // Différence de l'odometrie entre t et t+1;
             double dLeft  = (dLeft_now - m_dLeft_prev) / 1000.0;
             double dRight = (dRight_now - m_dRight_prev) / 1000.0;
@@ -121,7 +128,7 @@ namespace ezw {
             ros::Time timestamp = ros::Time::now();
             msgJoint.header.stamp = timestamp;
 
-            double dCenter = (dLeft + dRight) / 2;
+            double dCenter = (dLeft + dRight) / 2.0;
             double phi     = (dRight - dLeft) / m_baseline_m;
 
             double x_now     = m_x_prev + dCenter * std::cos(m_theta_prev);
@@ -152,18 +159,6 @@ namespace ezw {
             m_theta_prev  = theta_now;
             m_dLeft_prev  = dLeft_now;
             m_dRight_prev = dRight_now;
-
-            ezw_app_state_t state;
-            uint8_t         status;
-            if (m_leftControllerInitialized) {
-                status = (uint8_t)m_leftController.getAppState(state);
-            }
-            ROS_INFO("State left motor : %i", (uint8_t)state);
-
-            if (m_rightControllerInitialized) {
-                status = (uint8_t)m_rightController.getAppState(state);
-            }
-            ROS_INFO("State right motor : %i", (uint8_t)state);
         }
 
 ///
@@ -175,17 +170,22 @@ namespace ezw {
             m_timerWatchdog.start();
 
             // Conversion rad/s en rpm
-            int left  = static_cast<int>(speed->x * 60 / (2 * M_PI));
-            int right = static_cast<int>(speed->y * 60 / (2 * M_PI));
+            int32_t left  = static_cast<int32_t>(speed->x * 60.0 / (2.0 * M_PI));
+            int32_t right = static_cast<int32_t>(speed->y * 60.0 / (2.0 * M_PI));
 
-            ROS_INFO(
-                     "Set speed : left -> %f rad/s (%d RPM) // right -> %f rad/s (%d RPM)",
+            ROS_INFO("Set speed : left -> %f rad/s (%d RPM) // right -> %f rad/s (%d RPM)",
                      speed->x, left, speed->y, right);
-            if (m_leftControllerInitialized) {
-                m_leftController.setSpeed(left); // RPM
+
+            ezw_error_t err_code = m_leftController.setTargetVelocity(left); // en rpm
+            if (ezw_error_t::ERROR_NONE != err_code) {
+                ROS_ERROR("Left motor, setTargetVelocity error: %d", err_code);
+                return;
             }
-            if (m_rightControllerInitialized) {
-                m_rightController.setSpeed(right);
+
+            err_code = m_rightController.setTargetVelocity(right); // en mm
+            if (ezw_error_t::ERROR_NONE != err_code) {
+                ROS_ERROR("Right motor, setTargetVelocity error: %d", err_code);
+                return;
             }
         }
 

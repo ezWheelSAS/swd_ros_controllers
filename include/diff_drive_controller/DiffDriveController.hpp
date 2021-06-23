@@ -50,8 +50,6 @@ namespace ezw {
                 ros::Timer m_timerOdom, m_timerWatchdog;
                 ezw::smccore::Controller m_leftController, m_rightController;
                 double m_x_prev = 0, m_y_prev = 0, m_theta_prev = 0;
-                bool m_rightControllerInitialized = false,
-                     m_leftControllerInitialized = false;
                 int32_t m_dLeft_prev = 0, m_dRight_prev = 0;
 
                 void cbSetSpeed(const geometry_msgs::PointConstPtr &speed);

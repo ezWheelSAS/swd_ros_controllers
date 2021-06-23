@@ -46,9 +46,14 @@ namespace ezw {
         {
             sensor_msgs::JointState msgJoint;
 
-            int pos_now;
+            int32_t pos_now;
 
-            m_motorController.getOdometry(pos_now); // en mm
+            ezw_error_t state = m_motorController.getPositionValue(pos_now); // en mm
+            
+            if (ERROR_NONE != state) {
+                ROS_ERROR("Controler::getPositionValue returned: %d", state);
+                return;
+            }
 
             // Différence de l'odometrie entre t-1 et t
             double dPos     = (pos_now - m_pos_prev) / 1000.0;
@@ -62,10 +67,6 @@ namespace ezw {
 
             m_pubJointState.publish(msgJoint);
             m_pos_prev = pos_now;
-
-            ezw_app_state_t state;
-            uint8_t         status = (uint8_t)m_motorController.getAppState(state);
-            ROS_INFO("State motor %s : %d", m_name.c_str(), (uint8_t)state);
         }
 
 ///
@@ -77,10 +78,16 @@ namespace ezw {
             m_timerWatchdog.start();
 
             // Conversion rad/s en rpm
-            int speed = static_cast<int>(msg->data * 60 / (2 * M_PI));
+            int16_t speed = static_cast<int16_t>(msg->data * 60 / (2 * M_PI));
 
             ROS_INFO("Set speed : left -> %f (rad/s) | %i (RPM)", msg->data, speed);
-            m_motorController.setSpeed(speed); // RPM
+
+            auto state = m_motorController.setTargetVelocity(speed); // RPM
+
+            if (ERROR_NONE != state) {
+                ROS_ERROR("Controler::setTargetVelocity returned: %d", state);
+                return;
+            }
         }
 
 ///
