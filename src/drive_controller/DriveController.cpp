@@ -29,13 +29,19 @@ namespace ezw {
 
             ROS_INFO("Motor name : %s", m_name.c_str());
 
-            auto errorCode = m_motorController.init(config_file);
+            ezw_error_t err_code = m_motorController.init(config_file);
 
-            ROS_INFO("Init return status : %d", errorCode);
+            if (ezw_error_t::ERROR_NONE != err_code) {
+                ROS_ERROR("Motor %s initialization error : %d", m_name.c_str(), err_code);
+                return;
+            }
+
+            ROS_INFO("Init return status : %d", err_code);
 
             ezw_log_init("SMCS", "EZW SMC Service for Linux");
+
             m_timerOdom = m_nodeHandle->createTimer(
-                                                    ros::Duration(1 / m_pub_freq_hz),
+                                                    ros::Duration(1.0 / m_pub_freq_hz),
                                                     boost::bind(&DriveController::cbTimerOdom, this));
             m_timerWatchdog = m_nodeHandle->createTimer(
                                                         ros::Duration(m_watchdog_receive_ms / 1000.0),
@@ -48,10 +54,10 @@ namespace ezw {
 
             int32_t pos_now;
 
-            ezw_error_t state = m_motorController.getPositionValue(pos_now); // en mm
+            ezw_error_t err_code = m_motorController.getPositionValue(pos_now); // en mm
             
-            if (ERROR_NONE != state) {
-                ROS_ERROR("Controler::getPositionValue returned: %d", state);
+            if (ezw_error_t::ERROR_NONE != err_code) {
+                ROS_ERROR("Motor %s : getPositionValue returned: %d", m_name.c_str(), err_code);
                 return;
             }
 
@@ -78,14 +84,14 @@ namespace ezw {
             m_timerWatchdog.start();
 
             // Conversion rad/s en rpm
-            int16_t speed = static_cast<int16_t>(msg->data * 60 / (2 * M_PI));
+            int16_t speed = static_cast<int16_t>(msg->data * 60.0 / (2.0 * M_PI));
 
             ROS_INFO("Set speed : left -> %f (rad/s) | %i (RPM)", msg->data, speed);
 
-            auto state = m_motorController.setTargetVelocity(speed); // RPM
+            ezw_error_t err_code = m_motorController.setTargetVelocity(speed); // RPM
 
-            if (ERROR_NONE != state) {
-                ROS_ERROR("Controler::setTargetVelocity returned: %d", state);
+            if (ezw_error_t::ERROR_NONE != err_code) {
+                ROS_ERROR("Motor %s : setTargetVelocity returned: %d", m_name.c_str(), err_code);
                 return;
             }
         }

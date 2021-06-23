@@ -81,7 +81,7 @@ namespace ezw {
             }
 
             err_code = m_rightController.getPositionValue(m_dRight_prev); // en mm
-            if (ERROR_NONE != err_code) {
+            if (ezw_error_t::ERROR_NONE != err_code) {
                 ROS_ERROR("Right motor, getPositionValue error: %d", err_code);
                 return;
             }
