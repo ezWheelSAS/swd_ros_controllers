@@ -1,8 +1,11 @@
 common-api-3rdparty
 ezw-types
 ezwlog
+<<<<<<< Updated upstream
 ezw-io-service
 ezw-common
+=======
+>>>>>>> Stashed changes
 ezw-tools
 ezw-canopen-service
 ezw-smc-service
