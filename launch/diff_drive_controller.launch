@@ -3,10 +3,10 @@
 
     <node pkg="ezw_ros_controllers" name="diff_drive_controller" type="diff_drive_controller"
         output="screen">
-        <rosparam param="baseline_m">0.70</rosparam>
-        <rosparam param="pub_freq_hz">1</rosparam>
-        <rosparam param="left_config_file">"/opt/ros/share/ezw-ros-controllers/config/left_drive.ini"</rosparam>
-        <rosparam param="right_config_file">"/opt/ros/share/ezw-ros-controllers/config/right_drive.ini"</rosparam>
+        <rosparam param="baseline_m">0.485</rosparam>
+        <rosparam param="pub_freq_hz">50</rosparam>
+	<rosparam param="left_config_file">"/opt/ezw/usr/etc/ezw-smc-core/left_drive_config.ini"</rosparam>
+	<rosparam param="right_config_file">"/opt/ezw/usr/etc/ezw-smc-core/right_drive_config.ini"</rosparam>
         <rosparam param="watchdog_receive_ms">10000</rosparam>
     </node>
 

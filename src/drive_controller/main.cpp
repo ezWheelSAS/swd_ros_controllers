@@ -39,16 +39,12 @@ int main(int argc, char **argv)
         exit(-1);
     }
 
-    std::vector<std::shared_ptr<ezw::drivecontroller::DriveController>>
-    listClients;
+    std::vector<std::shared_ptr<ezw::drivecontroller::DriveController>> listClients;
 
     for (auto const &iter : motors_dict) {
-        ROS_INFO("Motor : %s -> Config file : %s", iter.first.c_str(),
-                 iter.second.c_str());
+        ROS_INFO("Motor : %s -> Config file : %s", iter.first.c_str(), iter.second.c_str());
 
-        listClients.push_back(
-                              std::make_shared<ezw::drivecontroller::DriveController>(
-                                                                                      iter.first, iter.second, &nh, watchdog_receive_ms, pub_freq_hz));
+        listClients.push_back(std::make_shared<ezw::drivecontroller::DriveController>(iter.first, iter.second, &nh, watchdog_receive_ms, pub_freq_hz));
     }
 
     ros::spin();
