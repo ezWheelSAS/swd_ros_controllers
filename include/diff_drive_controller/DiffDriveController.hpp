@@ -43,7 +43,7 @@ namespace ezw
             std::shared_ptr<ros::NodeHandle> m_nh;
 
             // Param
-            double      m_baseline_m;
+            double      m_baseline_m, m_left_wheel_diameter_m, m_right_wheel_diameter_m, m_l_motor_reduction, m_r_motor_reduction;
             int         m_pub_freq_hz, m_watchdog_receive_ms;
             std::string m_left_config_file, m_right_config_file;
 

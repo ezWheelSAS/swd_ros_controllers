@@ -65,6 +65,7 @@ namespace ezw
                     return;
                 }
 
+                m_r_motor_reduction = lConfig.getReduction();
                 /* CANOpenService client init */
                 auto lCOSClient = std::make_shared<ezw::canopenservice::DBusClient>();
                 lError          = lCOSClient->init();
@@ -102,6 +103,7 @@ namespace ezw
                     return;
                 }
 
+                m_l_motor_reduction = lConfig.getReduction();
                 /* CANOpenService client init */
                 auto lCOSClient = std::make_shared<ezw::canopenservice::DBusClient>();
                 lError          = lCOSClient->init();
@@ -220,8 +222,8 @@ namespace ezw
             m_timerWatchdog.start();
 
             // Conversion rad/s en rpm
-            int32_t left  = static_cast<int32_t>(speed->x * 60.0 / (2.0 * M_PI));
-            int32_t right = static_cast<int32_t>(speed->y * 60.0 / (2.0 * M_PI));
+            int32_t left  = static_cast<int32_t>(speed->x * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
+            int32_t right = static_cast<int32_t>(speed->y * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
 
             ROS_INFO("Set speed : left -> %f rad/s (%d RPM) // right -> %f rad/s (%d RPM)", speed->x, left, speed->y, right);
 
