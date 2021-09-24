@@ -201,6 +201,7 @@ Add inc directory:
 EZW_TYPES_INCLUDE_DIRS : ${EZW_TYPES_INCLUDE_DIRS}
 EZW_LOG_INCLUDE_DIRS : ${EZW_LOG_INCLUDE_DIRS}
 EZW_SMC_CORE_INCLUDE_DIRS : ${EZW_SMC_CORE_INCLUDE_DIRS}
+CATKIN_INCLUDE_DIRS : ${catkin_INCLUDE_DIRS}
 -------------------")
 
 include_directories(
@@ -215,6 +216,7 @@ message(STATUS "
 Add library directory:
 EZW_LOG_LIBRARY_DIRS : ${EZW_LOG_LIBRARY_DIRS}
 EZW_SMC_CORE_LIBRARY_DIRS : ${EZW_SMC_CORE_LIBRARY_DIRS}
+CATKIN_LIBRARY_DIRS : ${catkin_LIBRARY_DIRS}
 ------------------------------")
 
 link_directories(
@@ -385,20 +387,6 @@ add_custom_target(other_files SOURCES ${OTHER_FILES})
 ## Install ##
 #############
 
-install(
-  TARGETS drive_controller
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-install(
-  TARGETS diff_drive_controller
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
@@ -410,32 +398,22 @@ install(
 # )
 
 ## Mark executables for installation
+## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
 
 install(
   TARGETS drive_controller
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
 install(
   TARGETS diff_drive_controller
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-
-## Mark libraries for installation
-## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
-# install(TARGETS ${PROJECT_NAME}
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
-# )
-
-## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 install(
