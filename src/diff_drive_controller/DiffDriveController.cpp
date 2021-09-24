@@ -33,6 +33,7 @@ namespace ezw
             m_pubOdom       = m_nh->advertise<nav_msgs::Odometry>("odom", 5);
             m_pubJointState = m_nh->advertise<sensor_msgs::JointState>("joint_state", 5);
             m_subSetSpeed   = m_nh->subscribe("set_speed", 5, &DiffDriveController::cbSetSpeed, this);
+            m_subCmdVel   = m_nh->subscribe("cmd_vel", 5, &DiffDriveController::cbCmdVel, this);
 
             ROS_INFO("Node name : %s", ros::this_node::getName().c_str());
 
@@ -65,7 +66,9 @@ namespace ezw
                     return;
                 }
 
+                m_right_wheel_diameter_m = lConfig.getDiameter() * 1e-3;
                 m_r_motor_reduction = lConfig.getReduction();
+
                 /* CANOpenService client init */
                 auto lCOSClient = std::make_shared<ezw::canopenservice::DBusClient>();
                 lError          = lCOSClient->init();
@@ -103,7 +106,9 @@ namespace ezw
                     return;
                 }
 
+                m_left_wheel_diameter_m = lConfig.getDiameter() * 1e-3;
                 m_l_motor_reduction = lConfig.getReduction();
+
                 /* CANOpenService client init */
                 auto lCOSClient = std::make_shared<ezw::canopenservice::DBusClient>();
                 lError          = lCOSClient->init();
@@ -226,6 +231,38 @@ namespace ezw
             int32_t right = static_cast<int32_t>(speed->y * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
 
             ROS_INFO("Set speed : left -> %f rad/s (%d RPM) // right -> %f rad/s (%d RPM)", speed->x, left, speed->y, right);
+
+            ezw_error_t lError = m_leftController.setTargetVelocity(left); // en rpm
+            if (ezw_error_t::ERROR_NONE != lError) {
+                ROS_ERROR("Left motor, setTargetVelocity error: %d", lError);
+                return;
+            }
+
+            lError = m_rightController.setTargetVelocity(right); // en mm
+            if (ezw_error_t::ERROR_NONE != lError) {
+                ROS_ERROR("Right motor, setTargetVelocity error: %d", lError);
+                return;
+            }
+        }
+
+        ///
+        /// \brief Change robot velocity (linear m/s, angular rad/s)
+        ///
+        void DiffDriveController::cbCmdVel(const geometry_msgs::TwistPtr &cmd_vel)
+        {
+            m_timerWatchdog.stop();
+            m_timerWatchdog.start();
+
+            double left_vel, right_vel;
+
+            left_vel = (2. * cmd_vel.linear.x - cmd_vel.angular.z * m_baseline_m) / m_left_wheel_diameter;
+            right_vel = (2. * cmd_vel.linear.x + cmd_vel.angular.z * m_baseline_m) / m_right_wheel_diameter;
+
+            // Conversion rad/s en rpm
+            int32_t left  = static_cast<int32_t>(left_vel * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
+            int32_t right = static_cast<int32_t>(right_vel * m_r_motor_reduction * 60.0 / (2.0 * M_PI));
+
+            ROS_INFO("Cmd Vel : linear -> %f m/s (%d RPM) // angular -> %f rad/s (%d RPM)", cmd_vel->linear.x, left, cmd_vel->angular.z, right);
 
             ezw_error_t lError = m_leftController.setTargetVelocity(left); // en rpm
             if (ezw_error_t::ERROR_NONE != lError) {

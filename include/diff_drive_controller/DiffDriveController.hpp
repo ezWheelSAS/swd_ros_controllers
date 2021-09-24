@@ -12,6 +12,7 @@
 #include "ezw-smc-core/Controller.hpp"
 
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/Twist.h>
 
 #include <ros/node_handle.h>
 #include <ros/timer.h>
@@ -39,7 +40,7 @@ namespace ezw
 
           private:
             ros::Publisher                   m_pubOdom, m_pubJointState;
-            ros::Subscriber                  m_subSetSpeed;
+            ros::Subscriber                  m_subSetSpeed, m_subCmdVel;
             std::shared_ptr<ros::NodeHandle> m_nh;
 
             // Param
@@ -54,6 +55,7 @@ namespace ezw
             int32_t m_dLeft_prev = 0, m_dRight_prev = 0;
 
             void cbSetSpeed(const geometry_msgs::PointConstPtr &speed);
+            void cbCmdVel(const geometry_msgs::TwistPtr &speed);
             void cbTimerOdom(), cbWatchdog();
         };
     } // namespace diffdrivecontroller
