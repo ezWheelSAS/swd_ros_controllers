@@ -42,7 +42,7 @@ namespace ezw
 
           private:
             ros::Publisher                   m_pubOdom, m_pubJointState;
-            ros::Subscriber                  m_subSetSpeed, m_subCmdVel;
+            ros::Subscriber                  m_subCommand;
             std::shared_ptr<ros::NodeHandle> m_nh;
             tf2_ros::TransformBroadcaster    m_tf2_br;
 

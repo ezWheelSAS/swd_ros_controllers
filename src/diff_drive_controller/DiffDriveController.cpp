@@ -32,8 +32,6 @@ namespace ezw
         {
             m_pubOdom       = m_nh->advertise<nav_msgs::Odometry>("odom", 5);
             m_pubJointState = m_nh->advertise<sensor_msgs::JointState>("joint_state", 5);
-            m_subSetSpeed   = m_nh->subscribe("set_speed", 5, &DiffDriveController::cbSetSpeed, this);
-            m_subCmdVel     = m_nh->subscribe("cmd_vel", 5, &DiffDriveController::cbCmdVel, this);
 
             ROS_INFO("Node name : %s", ros::this_node::getName().c_str());
 
@@ -42,6 +40,17 @@ namespace ezw
             m_watchdog_receive_ms = m_nh->param("watchdog_receive_ms", 500);
             m_base_link           = m_nh->param("base_link", std::string("baselink"));
             m_odom_frame          = m_nh->param("odom_frame", std::string("odom"));
+            std::string ctrl_mode = m_nh->param("control_mode", std::string("Twist"));
+
+            if ("Twist" == ctrl_mode) {
+                m_subCommand   = m_nh->subscribe("cmd_vel", 5, &DiffDriveController::cbCmdVel, this);
+            } else if ("LeftRightSpeeds" == ctrl_mode) {
+                m_subCommand = m_nh->subscribe("set_speed", 5, &DiffDriveController::cbSetSpeed, this);
+            } else {
+                ROS_ERROR("Invalid value '%s' for parameter 'control_mode', accepted values: ['Twist' (default) or 'LeftRightSpeeds']",
+                          crtl_mode);
+                return;
+            }
 
             m_left_config_file  = m_nh->param("left_config_file", std::string(""));
             m_right_config_file = m_nh->param("right_config_file", std::string(""));
