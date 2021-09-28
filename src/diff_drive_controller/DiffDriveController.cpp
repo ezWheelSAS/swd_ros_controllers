@@ -209,7 +209,7 @@ namespace ezw
             m_pubOdom.publish(msgOdom);
             m_pubJointState.publish(msgJoint);
 
-            ROS_INFO("Odometry : dLeft : %f, dRight : %f\n Position x: %f, y: %f", static_cast<double>(dLeft), static_cast<double>(dRight), msgOdom.pose.pose.position.x, msgOdom.pose.pose.position.y);
+//   ROS_INFO("Odometry : dLeft : %f, dRight : %f\n Position x: %f, y: %f", static_cast<double>(dLeft), static_cast<double>(dRight), msgOdom.pose.pose.position.x, msgOdom.pose.pose.position.y);
 
             m_x_prev      = x_now;
             m_y_prev      = y_now;
@@ -262,7 +262,7 @@ namespace ezw
             int32_t left  = static_cast<int32_t>(left_vel * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
             int32_t right = static_cast<int32_t>(right_vel * m_r_motor_reduction * 60.0 / (2.0 * M_PI));
 
-            ROS_INFO("Cmd Vel : linear -> %f m/s (%d RPM) // angular -> %f rad/s (%d RPM)", cmd_vel->linear.x, left, cmd_vel->angular.z, right);
+            ROS_INFO("Cmd Vel : linear -> %f m/s // angular -> %f rad/s // Left RPM : %d // Right RPM : %d", cmd_vel->linear.x, cmd_vel->angular.z, left, right);
 
             ezw_error_t lError = m_leftController.setTargetVelocity(left); // en rpm
             if (ezw_error_t::ERROR_NONE != lError) {
