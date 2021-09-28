@@ -14,9 +14,9 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Twist.h>
 
+#include <cmath>
 #include <ros/node_handle.h>
 #include <ros/timer.h>
-#include <cmath>
 
 #include <tf2_ros/transform_broadcaster.h>
 
@@ -48,8 +48,7 @@ namespace ezw
             tf2_ros::TransformBroadcaster    m_tf2_br;
 
             // Param
-            double      m_baseline_m, m_left_wheel_diameter_m,
-                        m_right_wheel_diameter_m, m_l_motor_reduction, m_r_motor_reduction;
+            double      m_baseline_m, m_left_wheel_diameter_m, m_right_wheel_diameter_m, m_l_motor_reduction, m_r_motor_reduction;
             int         m_pub_freq_hz, m_watchdog_receive_ms;
             std::string m_odom_frame, m_base_link, m_left_config_file, m_right_config_file;
 
@@ -59,11 +58,14 @@ namespace ezw
             double  m_x_prev = 0, m_y_prev = 0, m_theta_prev = 0;
             int32_t m_dist_left_prev = 0, m_dist_right_prev = 0;
 
-            void DiffDriveController::setSpeeds(int32_t left_speed, int32_t right_speed);
-            void cbSetSpeed(const geometry_msgs::PointConstPtr &speed);
-            void cbCmdVel(const geometry_msgs::TwistPtr &speed);
-            void cbTimerOdom(), cbWatchdog();
-            inline double boundAngle(double a) {return (a > M_PI) ? a - 2. * M_PI : ((a < -M_PI) ? a + 2. * M_PI : a); }
+            void          setSpeeds(int32_t left_speed, int32_t right_speed);
+            void          cbSetSpeed(const geometry_msgs::PointConstPtr &speed);
+            void          cbCmdVel(const geometry_msgs::TwistPtr &speed);
+            void          cbTimerOdom(), cbWatchdog();
+            inline double boundAngle(double a)
+            {
+                return (a > M_PI) ? a - 2. * M_PI : ((a < -M_PI) ? a + 2. * M_PI : a);
+            }
         };
     } // namespace diffdrivecontroller
 } // namespace ezw

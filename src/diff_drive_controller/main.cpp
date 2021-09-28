@@ -25,7 +25,7 @@ int main(int argc, char **argv)
         std::this_thread::sleep_for(1s);
     }
 
-    std::cout << "Ready !" << std::endl;
+    ROS_INFO("Ready !");
 
     auto                                          nh = std::make_shared<ros::NodeHandle>("~");
     ezw::diffdrivecontroller::DiffDriveController diffDriveController(nh);
