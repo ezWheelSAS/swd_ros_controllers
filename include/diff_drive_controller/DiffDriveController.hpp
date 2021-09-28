@@ -58,6 +58,7 @@ namespace ezw
             double  m_x_prev = 0, m_y_prev = 0, m_theta_prev = 0;
             int32_t m_dLeft_prev = 0, m_dRight_prev = 0;
 
+            void DiffDriveController::setSpeeds(int32_t left_speed, int32_t right_speed);
             void cbSetSpeed(const geometry_msgs::PointConstPtr &speed);
             void cbCmdVel(const geometry_msgs::TwistPtr &speed);
             void cbTimerOdom(), cbWatchdog();

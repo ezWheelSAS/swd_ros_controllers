@@ -271,17 +271,7 @@ namespace ezw
 
             ROS_INFO("Set speed : left -> %f rad/s (%d RPM) // right -> %f rad/s (%d RPM)", speed->x, left, speed->y, right);
 
-            ezw_error_t lError = m_leftController.setTargetVelocity(left); // en rpm
-            if (ezw_error_t::ERROR_NONE != lError) {
-                ROS_ERROR("Left motor, setTargetVelocity error: %d", lError);
-                return;
-            }
-
-            lError = m_rightController.setTargetVelocity(right); // en mm
-            if (ezw_error_t::ERROR_NONE != lError) {
-                ROS_ERROR("Right motor, setTargetVelocity error: %d", lError);
-                return;
-            }
+            setSpeeds(left, right);
         }
 
         ///
@@ -304,15 +294,21 @@ namespace ezw
             ROS_INFO("Cmd Vel : linear -> %f m/s // angular -> %f rad/s // Left RPM : %d // Right RPM : %d",
                      cmd_vel->linear.x, cmd_vel->angular.z, left, right);
 
-            ezw_error_t lError = m_leftController.setTargetVelocity(left); // en rpm
+            setSpeeds(left, right);
+        }
+
+        void DiffDriveController::setSpeeds(int32_t left_speed, int32_t right_speed) {
+            ezw_error_t lError = m_leftController.setTargetVelocity(left_speed); // en rpm
             if (ezw_error_t::ERROR_NONE != lError) {
-                ROS_ERROR("Left motor, setTargetVelocity error: %d", lError);
+                ROS_ERROR("Failed setting velocity of right motor, EZW_ERR: %s",
+                          EZW_STR(("SMCService : Controller::setTargetVelocity() return error code : " + std::to_string(lError)).c_str()));
                 return;
             }
 
-            lError = m_rightController.setTargetVelocity(right); // en mm
+            lError = m_rightController.setTargetVelocity(right_speed); // en rpm
             if (ezw_error_t::ERROR_NONE != lError) {
-                ROS_ERROR("Right motor, setTargetVelocity error: %d", lError);
+                ROS_ERROR("Failed setting velocity of right motor, EZW_ERR: %s",
+                          EZW_STR(("SMCService : Controller::setTargetVelocity() return error code : " + std::to_string(lError)).c_str()));
                 return;
             }
         }
@@ -323,12 +319,7 @@ namespace ezw
         ///
         void DiffDriveController::cbWatchdog()
         {
-            geometry_msgs::PointPtr msg(new geometry_msgs::Point);
-
-            msg->x = 0;
-            msg->y = 0;
-            msg->z = 0;
-            cbSetSpeed(msg);
+            setSpeeds(0, 0);
         }
     } // namespace diffdrivecontroller
 } // namespace ezw
