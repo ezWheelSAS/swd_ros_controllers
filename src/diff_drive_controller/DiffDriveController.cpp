@@ -10,8 +10,6 @@
 
 #include "ezw-canopen-service/DBusClient.hpp"
 
-#include <math.h>
-
 #include <geometry_msgs/TransformStamped.h>
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Odometry.h>
@@ -30,8 +28,8 @@ namespace ezw
     {
         DiffDriveController::DiffDriveController(const std::shared_ptr<ros::NodeHandle> nh) : m_nh(nh)
         {
-            m_pubOdom       = m_nh->advertise<nav_msgs::Odometry>("odom", 5);
-            m_pubJointState = m_nh->advertise<sensor_msgs::JointState>("joint_state", 5);
+            m_pub_odom        = m_nh->advertise<nav_msgs::Odometry>("odom", 5);
+            m_pub_joint_state = m_nh->advertise<sensor_msgs::JointState>("joint_state", 5);
 
             ROS_INFO("Node name : %s", ros::this_node::getName().c_str());
 
@@ -43,9 +41,9 @@ namespace ezw
             std::string ctrl_mode = m_nh->param("control_mode", std::string("Twist"));
 
             if ("Twist" == ctrl_mode) {
-                m_subCommand   = m_nh->subscribe("cmd_vel", 5, &DiffDriveController::cbCmdVel, this);
+                m_sub_command = m_nh->subscribe("cmd_vel", 5, &DiffDriveController::cbCmdVel, this);
             } else if ("LeftRightSpeeds" == ctrl_mode) {
-                m_subCommand = m_nh->subscribe("set_speed", 5, &DiffDriveController::cbSetSpeed, this);
+                m_sub_command = m_nh->subscribe("set_speed", 5, &DiffDriveController::cbSetSpeed, this);
             } else {
                 ROS_ERROR("Invalid value '%s' for parameter 'control_mode', accepted values: ['Twist' (default) or 'LeftRightSpeeds']",
                           crtl_mode);
@@ -102,7 +100,7 @@ namespace ezw
                     return;
                 }
 
-                lError = m_rightController.init(lConfig, lCANOpenDispatcher);
+                lError = m_right_controller.init(lConfig, lCANOpenDispatcher);
                 if (ezw_error_t::ERROR_NONE != lError) {
                     ROS_ERROR("Failed initializing right motor, CONTEXT_ID: %d, EZW_ERR: %s", lConfig->getContextId(),
                               EZW_STR(("SMCService : Controller::init() return error code : " + std::to_string(lError)).c_str()));
@@ -144,7 +142,7 @@ namespace ezw
                     return;
                 }
 
-                lError = m_leftController.init(lConfig, lCANOpenDispatcher);
+                lError = m_left_controller.init(lConfig, lCANOpenDispatcher);
                 if (ezw_error_t::ERROR_NONE != lError) {
                     ROS_ERROR("Failed initializing left motor, CONTEXT_ID: %d, EZW_ERR: %s", lConfig->getContextId(),
                               EZW_STR(("SMCService : Controller::init() return error code : " + std::to_string(lError)).c_str()));
@@ -156,39 +154,40 @@ namespace ezw
             }
 
             // Init
-            lError = m_leftController.getPositionValue(m_dLeft_prev); // en mm
+            lError = m_left_controller.getPositionValue(m_dist_left_prev); // en mm
             if (ezw_error_t::ERROR_NONE != lError) {
                 ROS_ERROR("Failed initial reading from left motor, EZW_ERR: %s",
                           EZW_STR(("SMCService : Controller::getPositionValue() return error code : " + std::to_string(lError)).c_str()));
                     return;
             }
 
-            lError = m_rightController.getPositionValue(m_dRight_prev); // en mm
+            lError = m_right_controller.getPositionValue(m_dist_right_prev); // en mm
             if (ezw_error_t::ERROR_NONE != lError) {
                 ROS_ERROR("Failed initial reading from right motor, EZW_ERR: %s",
                           EZW_STR(("SMCService : Controller::getPositionValue() return error code : " + std::to_string(lError)).c_str()));
             }
 
-            m_timerOdom     = m_nh->createTimer(ros::Duration(1.0 / m_pub_freq_hz), boost::bind(&DiffDriveController::cbTimerOdom, this));
-            m_timerWatchdog = m_nh->createTimer(ros::Duration(m_watchdog_receive_ms / 1000.0), boost::bind(&DiffDriveController::cbWatchdog, this));
+            m_timer_odom     = m_nh->createTimer(ros::Duration(1.0 / m_pub_freq_hz), boost::bind(&DiffDriveController::cbTimerOdom, this));
+            m_timer_watchdog = m_nh->createTimer(ros::Duration(m_watchdog_receive_ms / 1000.0), boost::bind(&DiffDriveController::cbWatchdog, this));
         }
 
         void DiffDriveController::cbTimerOdom()
         {
-            nav_msgs::Odometry      msgOdom;
-            sensor_msgs::JointState msgJoint;
+            nav_msgs::Odometry      msg_odom;
+            sensor_msgs::JointState msg_joint_state;
+            geometry_msgs::TransformStamped tf_odom_baselink;
 
             // Toutes les longueurs sont en mètres
-            int32_t dLeft_now = 0, dRight_now = 0;
+            int32_t left_dist_now = 0, right_dist_now = 0;
 
-            ezw_error_t lError = m_leftController.getPositionValue(dLeft_now); // en mm
+            ezw_error_t lError = m_left_controller.getPositionValue(left_dist_now); // en mm
             if (ezw_error_t::ERROR_NONE != lError) {
                 ROS_ERROR("Failed reading from left motor, EZW_ERR: %s",
                           EZW_STR(("SMCService : Controller::getPositionValue() return error code : " + std::to_string(lError)).c_str()));
                 return;
             }
 
-            lError = m_rightController.getPositionValue(dRight_now); // en mm
+            lError = m_right_controller.getPositionValue(right_dist_now); // en mm
             if (ezw_error_t::ERROR_NONE != lError) {
                 ROS_ERROR("Failed reading from right motor, EZW_ERR: %s",
                           EZW_STR(("SMCService : Controller::getPositionValue() return error code : " + std::to_string(lError)).c_str()));
@@ -196,76 +195,83 @@ namespace ezw
             }
 
             // Différence de l'odometrie entre t et t+1;
-            double dLeft  = (dLeft_now - m_dLeft_prev) / 1000.0;
-            double dRight = (dRight_now - m_dRight_prev) / 1000.0;
+            double d_dist_left  = (left_dist_now - m_dist_left_prev) / 1000.0;
+            double d_dist_right = (right_dist_now - m_dist_right_prev) / 1000.0;
 
             ros::Time timestamp   = ros::Time::now();
 
             // msg joint
-            msgJoint.name.push_back("left_motor");
-            msgJoint.name.push_back("right_motor");
-            msgJoint.position.push_back(dLeft_now / 1000.0);
-            msgJoint.position.push_back(dRight_now / 1000.0);
-            msgJoint.velocity.push_back(dLeft / m_pub_freq_hz);
-            msgJoint.velocity.push_back(dRight / m_pub_freq_hz);
-            msgJoint.header.stamp = timestamp;
+            msg_joint_state.name.push_back("left_motor");
+            msg_joint_state.name.push_back("right_motor");
+            msg_joint_state.position.push_back(left_dist_now / 1000.0);
+            msg_joint_state.position.push_back(right_dist_now / 1000.0);
+            msg_joint_state.velocity.push_back(d_dist_left / m_pub_freq_hz);
+            msg_joint_state.velocity.push_back(d_dist_right / m_pub_freq_hz);
+            msg_joint_state.header.stamp = timestamp;
 
-            double dCenter = (dLeft + dRight) / 2.0;
-            double phi     = (dRight - dLeft) / m_baseline_m;
+            // Kinematic model
+            double d_dist_center = (d_dist_left + d_dist_right) / 2.0;
+            double d_theta      = (d_dist_right - d_dist_left) / m_baseline_m;
 
-            double x_now     = m_x_prev + dCenter * std::cos(m_theta_prev);
-            double y_now     = m_y_prev + dCenter * std::sin(m_theta_prev);
-            double theta_now = m_theta_prev + phi;
+            // Odometry model, integration of the diff drive kinematic model
+            double x_now     = m_x_prev + d_dist_center * std::cos(m_theta_prev);
+            double y_now     = m_y_prev + d_dist_center * std::sin(m_theta_prev);
+            double theta_now = boundAngle(m_theta_prev + d_theta);
 
-            msgOdom.twist                = geometry_msgs::TwistWithCovariance();
-            msgOdom.pose.pose.position.x = x_now;
-            msgOdom.pose.pose.position.y = y_now;
-            msgOdom.pose.pose.position.z = 0;
+            msg_odom.header.stamp         = timestamp;
+            msg_odom.header.frame_id      = m_odom_frame;
+            msg_odom.child_frame_id       = m_base_link;
 
-            tf2::Quaternion quaternion;
-            quaternion.setRPY(0, 0, theta_now);
-            msgOdom.pose.pose.orientation.x = quaternion.getX();
-            msgOdom.pose.pose.orientation.y = quaternion.getY();
-            msgOdom.pose.pose.orientation.x = quaternion.getZ();
-            msgOdom.pose.pose.orientation.x = quaternion.getW();
-            msgOdom.header.stamp            = timestamp;
-            msgOdom.header.frame_id         = m_odom_link;
+            msg_odom.twist                = geometry_msgs::TwistWithCovariance();
+            msg_odom.twist.linear.x       = d_dist_center / m_pub_freq_hz;
+            msg_odom.twist.angular.z      = d_theta / m_pub_freq_hz;
 
-            m_pubOdom.publish(msgOdom);
-            m_pubJointState.publish(msgJoint);
+            msg_odom.pose.pose.position.x = x_now;
+            msg_odom.pose.pose.position.y = y_now;
+            msg_odom.pose.pose.position.z = 0;
 
-            ROS_INFO("Odometry : dLeft : %f, dRight : %f\n Position x: %f, y: %f",
-                     static_cast<double>(dLeft), static_cast<double>(dRight),
-                     msgOdom.pose.pose.position.x, msgOdom.pose.pose.position.y);
+            tf2::Quaternion quat_orientation;
+            quat_orientation.setRPY(0, 0, theta_now);
+            msg_odom.pose.pose.orientation.x = quat_orientation.getX();
+            msg_odom.pose.pose.orientation.y = quat_orientation.getY();
+            msg_odom.pose.pose.orientation.x = quat_orientation.getZ();
+            msg_odom.pose.pose.orientation.x = quat_orientation.getW();
 
-            geometry_msgs::TransformStamped tf_odom_baselink;
-            tf_odom_baselink.header.stamp = timestamp;
+            m_pub_odom.publish(msg_odom);
+            m_pub_joint_state.publish(msg_joint_state);
+
+            ROS_INFO("Odometry : d_dist_left : %f, d_dist_right : %f\n Position x: %f, y: %f",
+                     static_cast<double>(d_dist_left), static_cast<double>(d_dist_right),
+                     msg_odom.pose.pose.position.x, msg_odom.pose.pose.position.y);
+
+            tf_odom_baselink.header.stamp    = timestamp;
             tf_odom_baselink.header.frame_id = m_odom_frame;
-            tf_odom_baselink.child_frame_id = m_base_link;
+            tf_odom_baselink.child_frame_id  = m_base_link;
 
-            tf_odom_baselink.transform.translation.x = msgOdom.pose.pose.position.x;
-            tf_odom_baselink.transform.translation.y = msgOdom.pose.pose.position.y;
-            tf_odom_baselink.transform.translation.z = msgOdom.pose.pose.position.z;
-            tf_odom_baselink.transform.rotation = msgOdom.pose.pose.orientation;
+            tf_odom_baselink.transform.translation.x = msg_odom.pose.pose.position.x;
+            tf_odom_baselink.transform.translation.y = msg_odom.pose.pose.position.y;
+            tf_odom_baselink.transform.translation.z = msg_odom.pose.pose.position.z;
+            tf_odom_baselink.transform.rotation      = msg_odom.pose.pose.orientation;
 
+            // Send TF
             m_tf2_br.sendTransform(tf_odom_baselink);
             
-            m_x_prev      = x_now;
-            m_y_prev      = y_now;
-            m_theta_prev  = theta_now;
-            m_dLeft_prev  = dLeft_now;
-            m_dRight_prev = dRight_now;
+            m_x_prev          = x_now;
+            m_y_prev          = y_now;
+            m_theta_prev      = theta_now;
+            m_dist_left_prev  = left_dist_now;
+            m_dist_right_prev = right_dist_now;
         }
 
         ///
-        /// \brief Change wheel speed (msg.x = left motor, msg.y = right motor) rad/s
+        /// \brief Change wheel speed (msg.x = left wheel, msg.y = right wheel) [rad/s]
         ///
         void DiffDriveController::cbSetSpeed(const geometry_msgs::PointConstPtr &speed)
         {
-            m_timerWatchdog.stop();
-            m_timerWatchdog.start();
+            m_timer_watchdog.stop();
+            m_timer_watchdog.start();
 
-            // Conversion rad/s en rpm
+            // Convert rad/s wheel speed to rpm motor speed
             int32_t left  = static_cast<int32_t>(speed->x * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
             int32_t right = static_cast<int32_t>(speed->y * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
 
@@ -275,19 +281,20 @@ namespace ezw
         }
 
         ///
-        /// \brief Change robot velocity (linear m/s, angular rad/s)
+        /// \brief Change robot velocity (linear [m/s], angular [rad/s])
         ///
         void DiffDriveController::cbCmdVel(const geometry_msgs::TwistPtr &cmd_vel)
         {
-            m_timerWatchdog.stop();
-            m_timerWatchdog.start();
+            m_timer_watchdog.stop();
+            m_timer_watchdog.start();
 
             double left_vel, right_vel;
 
+            // Control model (diff drive)
             left_vel  = (2. * cmd_vel->linear.x - cmd_vel->angular.z * m_baseline_m) / m_left_wheel_diameter_m;
             right_vel = (2. * cmd_vel->linear.x + cmd_vel->angular.z * m_baseline_m) / m_right_wheel_diameter_m;
 
-            // Conversion rad/s en rpm
+            // Convert rad/s wheel speed to rpm motor speed
             int32_t left  = static_cast<int32_t>(left_vel * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
             int32_t right = static_cast<int32_t>(right_vel * m_r_motor_reduction * 60.0 / (2.0 * M_PI));
 
@@ -298,14 +305,14 @@ namespace ezw
         }
 
         void DiffDriveController::setSpeeds(int32_t left_speed, int32_t right_speed) {
-            ezw_error_t lError = m_leftController.setTargetVelocity(left_speed); // en rpm
+            ezw_error_t lError = m_left_controller.setTargetVelocity(left_speed); // en rpm
             if (ezw_error_t::ERROR_NONE != lError) {
                 ROS_ERROR("Failed setting velocity of right motor, EZW_ERR: %s",
                           EZW_STR(("SMCService : Controller::setTargetVelocity() return error code : " + std::to_string(lError)).c_str()));
                 return;
             }
 
-            lError = m_rightController.setTargetVelocity(right_speed); // en rpm
+            lError = m_right_controller.setTargetVelocity(right_speed); // en rpm
             if (ezw_error_t::ERROR_NONE != lError) {
                 ROS_ERROR("Failed setting velocity of right motor, EZW_ERR: %s",
                           EZW_STR(("SMCService : Controller::setTargetVelocity() return error code : " + std::to_string(lError)).c_str()));
