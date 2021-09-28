@@ -36,7 +36,7 @@ namespace ezw
             ROS_INFO("Node name : %s", ros::this_node::getName().c_str());
 
             m_baseline_m          = m_nh->param("baseline_m", 0.0);
-            m_pub_freq_hz         = m_nh->param("pub_freq_hz", 10);
+            m_pub_freq_hz         = m_nh->param("pub_freq_hz", 50);
             m_watchdog_receive_ms = m_nh->param("watchdog_receive_ms", 500);
             m_base_link           = m_nh->param("base_link", std::string("baselink"));
             m_odom_frame          = m_nh->param("odom_frame", std::string("odom"));
