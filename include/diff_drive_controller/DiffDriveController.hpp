@@ -17,6 +17,8 @@
 #include <ros/node_handle.h>
 #include <ros/timer.h>
 
+#include <tf2_ros/transform_broadcaster.h>
+
 namespace ezw
 {
     namespace diffdrivecontroller
@@ -42,11 +44,13 @@ namespace ezw
             ros::Publisher                   m_pubOdom, m_pubJointState;
             ros::Subscriber                  m_subSetSpeed, m_subCmdVel;
             std::shared_ptr<ros::NodeHandle> m_nh;
+            tf2_ros::TransformBroadcaster    m_tf2_br;
 
             // Param
-            double      m_baseline_m, m_left_wheel_diameter_m, m_right_wheel_diameter_m, m_l_motor_reduction, m_r_motor_reduction;
+            double      m_baseline_m, m_left_wheel_diameter_m,
+                        m_right_wheel_diameter_m, m_l_motor_reduction, m_r_motor_reduction;
             int         m_pub_freq_hz, m_watchdog_receive_ms;
-            std::string m_left_config_file, m_right_config_file;
+            std::string m_odom_frame, m_base_link, m_left_config_file, m_right_config_file;
 
             ros::Timer               m_timerOdom, m_timerWatchdog;
             ezw::smccore::Controller m_leftController, m_rightController;

@@ -12,13 +12,13 @@
 
 #include <math.h>
 
+#include <geometry_msgs/TransformStamped.h>
+#include <sensor_msgs/JointState.h>
 #include <nav_msgs/Odometry.h>
 
 #include <ros/console.h>
 #include <ros/duration.h>
 #include <ros/ros.h>
-
-#include <sensor_msgs/JointState.h>
 
 #include <tf2/LinearMath/Quaternion.h>
 
@@ -40,11 +40,17 @@ namespace ezw
             m_baseline_m          = m_nh->param("baseline_m", 0.0);
             m_pub_freq_hz         = m_nh->param("pub_freq_hz", 10);
             m_watchdog_receive_ms = m_nh->param("watchdog_receive_ms", 500);
+            m_base_link           = m_nh->param("base_link", std::string("baselink"));
+            m_odom_frame          = m_nh->param("odom_frame", std::string("odom"));
 
             m_left_config_file  = m_nh->param("left_config_file", std::string(""));
             m_right_config_file = m_nh->param("right_config_file", std::string(""));
 
             if (m_baseline_m <= 0) {
+                throw std::runtime_error("baseline_m parameter is mandatory and must be > 0");
+            }
+
+            if (m_wheel_diameter_m <= 0) {
                 throw std::runtime_error("baseline_m parameter is mandatory and must be > 0");
             }
 
@@ -177,6 +183,8 @@ namespace ezw
             double dLeft  = (dLeft_now - m_dLeft_prev) / 1000.0;
             double dRight = (dRight_now - m_dRight_prev) / 1000.0;
 
+            ros::Time timestamp   = ros::Time::now();
+
             // msg joint
             msgJoint.name.push_back("left_motor");
             msgJoint.name.push_back("right_motor");
@@ -184,7 +192,6 @@ namespace ezw
             msgJoint.position.push_back(dRight_now / 1000.0);
             msgJoint.velocity.push_back(dLeft / m_pub_freq_hz);
             msgJoint.velocity.push_back(dRight / m_pub_freq_hz);
-            ros::Time timestamp   = ros::Time::now();
             msgJoint.header.stamp = timestamp;
 
             double dCenter = (dLeft + dRight) / 2.0;
@@ -198,6 +205,7 @@ namespace ezw
             msgOdom.pose.pose.position.x = x_now;
             msgOdom.pose.pose.position.y = y_now;
             msgOdom.pose.pose.position.z = 0;
+
             tf2::Quaternion quaternion;
             quaternion.setRPY(0, 0, theta_now);
             msgOdom.pose.pose.orientation.x = quaternion.getX();
@@ -205,12 +213,27 @@ namespace ezw
             msgOdom.pose.pose.orientation.x = quaternion.getZ();
             msgOdom.pose.pose.orientation.x = quaternion.getW();
             msgOdom.header.stamp            = timestamp;
+            msgOdom.header.frame_id         = m_odom_link;
 
             m_pubOdom.publish(msgOdom);
             m_pubJointState.publish(msgJoint);
 
-//   ROS_INFO("Odometry : dLeft : %f, dRight : %f\n Position x: %f, y: %f", static_cast<double>(dLeft), static_cast<double>(dRight), msgOdom.pose.pose.position.x, msgOdom.pose.pose.position.y);
+            ROS_INFO("Odometry : dLeft : %f, dRight : %f\n Position x: %f, y: %f",
+                     static_cast<double>(dLeft), static_cast<double>(dRight),
+                     msgOdom.pose.pose.position.x, msgOdom.pose.pose.position.y);
 
+            geometry_msgs::TransformStamped tf_odom_baselink;
+            tf_odom_baselink.header.stamp = timestamp;
+            tf_odom_baselink.header.frame_id = m_odom_frame;
+            tf_odom_baselink.child_frame_id = m_base_link;
+
+            tf_odom_baselink.transform.translation.x = msgOdom.pose.pose.position.x;
+            tf_odom_baselink.transform.translation.y = msgOdom.pose.pose.position.y;
+            tf_odom_baselink.transform.translation.z = msgOdom.pose.pose.position.z;
+            tf_odom_baselink.transform.rotation = msgOdom.pose.pose.orientation;
+
+            m_tf2_br.sendTransform(tf_odom_baselink);
+            
             m_x_prev      = x_now;
             m_y_prev      = y_now;
             m_theta_prev  = theta_now;
@@ -262,7 +285,8 @@ namespace ezw
             int32_t left  = static_cast<int32_t>(left_vel * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
             int32_t right = static_cast<int32_t>(right_vel * m_r_motor_reduction * 60.0 / (2.0 * M_PI));
 
-            ROS_INFO("Cmd Vel : linear -> %f m/s // angular -> %f rad/s // Left RPM : %d // Right RPM : %d", cmd_vel->linear.x, cmd_vel->angular.z, left, right);
+            ROS_INFO("Cmd Vel : linear -> %f m/s // angular -> %f rad/s // Left RPM : %d // Right RPM : %d",
+                     cmd_vel->linear.x, cmd_vel->angular.z, left, right);
 
             ezw_error_t lError = m_leftController.setTargetVelocity(left); // en rpm
             if (ezw_error_t::ERROR_NONE != lError) {
