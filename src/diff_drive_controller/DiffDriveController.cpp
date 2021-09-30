@@ -221,13 +221,11 @@ namespace ezw
             quat_orientation.setRPY(0, 0, theta_now);
             msg_odom.pose.pose.orientation.x = quat_orientation.getX();
             msg_odom.pose.pose.orientation.y = quat_orientation.getY();
-            msg_odom.pose.pose.orientation.x = quat_orientation.getZ();
-            msg_odom.pose.pose.orientation.x = quat_orientation.getW();
+            msg_odom.pose.pose.orientation.z = quat_orientation.getZ();
+            msg_odom.pose.pose.orientation.w = quat_orientation.getW();
 
             m_pub_odom.publish(msg_odom);
             m_pub_joint_state.publish(msg_joint_state);
-
-            ROS_INFO("Odometry : d_dist_left : %f, d_dist_right : %f\n Position x: %f, y: %f", static_cast<double>(d_dist_left), static_cast<double>(d_dist_right), msg_odom.pose.pose.position.x, msg_odom.pose.pose.position.y);
 
             tf_odom_baselink.header.stamp    = timestamp;
             tf_odom_baselink.header.frame_id = m_odom_frame;
