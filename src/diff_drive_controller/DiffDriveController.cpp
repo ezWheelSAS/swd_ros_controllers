@@ -100,7 +100,7 @@ namespace ezw
                 }
 
                 lError = m_right_controller.init(lConfig, lCANOpenDispatcher);
-                if (ezw_error_t::ERROR_NONE != lError) {
+                if (ERROR_NONE != lError) {
                     ROS_ERROR("Failed initializing right motor, CONTEXT_ID: %d, EZW_ERR: SMCService : Controller::init() return error code : %d", (int)lError);
                     return;
                 }
@@ -139,7 +139,7 @@ namespace ezw
                 }
 
                 lError = m_left_controller.init(lConfig, lCANOpenDispatcher);
-                if (ezw_error_t::ERROR_NONE != lError) {
+                if (ERROR_NONE != lError) {
                     ROS_ERROR("Failed initializing left motor, CONTEXT_ID: %d, EZW_ERR: SMCService : Controller::init() return error code : %d", (int)lError);
                     return;
                 }
@@ -150,13 +150,13 @@ namespace ezw
 
             // Init
             lError = m_left_controller.getPositionValue(m_dist_left_prev); // en mm
-            if (ezw_error_t::ERROR_NONE != lError) {
+            if (ERROR_NONE != lError) {
                 ROS_ERROR("Failed initial reading from left motor, EZW_ERR: SMCService : Controller::getPositionValue() return error code : %d", (int)lError);
                 return;
             }
 
             lError = m_right_controller.getPositionValue(m_dist_right_prev); // en mm
-            if (ezw_error_t::ERROR_NONE != lError) {
+            if (ERROR_NONE != lError) {
                 ROS_ERROR("Failed initial reading from right motor, EZW_ERR: SMCService : Controller::getPositionValue() return error code : %d", (int)lError);
             }
 
@@ -174,13 +174,13 @@ namespace ezw
             int32_t left_dist_now = 0, right_dist_now = 0;
 
             ezw_error_t lError = m_left_controller.getPositionValue(left_dist_now); // en mm
-            if (ezw_error_t::ERROR_NONE != lError) {
+            if (ERROR_NONE != lError) {
                 ROS_ERROR("Failed reading from left motor, EZW_ERR: SMCService : Controller::getPositionValue() return error code : %d", (int)lError);
                 return;
             }
 
             lError = m_right_controller.getPositionValue(right_dist_now); // en mm
-            if (ezw_error_t::ERROR_NONE != lError) {
+            if (ERROR_NONE != lError) {
                 ROS_ERROR("Failed reading from right motor, EZW_ERR: SMCService : Controller::getPositionValue() return error code : %d", (int)lError);
                 return;
             }
@@ -293,13 +293,13 @@ namespace ezw
         void DiffDriveController::setSpeeds(int32_t left_speed, int32_t right_speed)
         {
             ezw_error_t lError = m_left_controller.setTargetVelocity(left_speed); // en rpm
-            if (ezw_error_t::ERROR_NONE != lError) {
+            if (ERROR_NONE != lError) {
                 ROS_ERROR("Failed setting velocity of right motor, EZW_ERR: SMCService : Controller::setTargetVelocity() return error code : %d", (int)lError);
                 return;
             }
 
             lError = m_right_controller.setTargetVelocity(right_speed); // en rpm
-            if (ezw_error_t::ERROR_NONE != lError) {
+            if (ERROR_NONE != lError) {
                 ROS_ERROR("Failed setting velocity of right motor, EZW_ERR: SMCService : Controller::setTargetVelocity() return error code : %d", (int)lError);
                 return;
             }
