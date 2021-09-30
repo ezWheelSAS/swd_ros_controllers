@@ -73,7 +73,8 @@ namespace ezw
                 auto lConfig = std::make_shared<ezw::smccore::Config>();
                 lError       = lConfig->load(m_right_config_file);
                 if (lError != ERROR_NONE) {
-                    ROS_ERROR("Failed loading right motor's config file <%s>, CONTEXT_ID: %d, EZW_ERR: SMCService : Config.init() return error code : %d", m_right_config_file.c_str(), CON_APP, (int)lError);
+                    ROS_ERROR("Failed loading right motor's config file <%s>, CONTEXT_ID: %d, EZW_ERR: SMCService : Config.init() return error code : %d",
+                              m_right_config_file.c_str(), CON_APP, (int)lError);
                     return;
                 }
 
@@ -84,7 +85,8 @@ namespace ezw
                 auto lCOSClient = std::make_shared<ezw::canopenservice::DBusClient>();
                 lError          = lCOSClient->init();
                 if (lError != ERROR_NONE) {
-                    ROS_ERROR("Failed initializing right motor, CONTEXT_ID: %d, EZW_ERR: SMCService : COSDBusClient::init() return error code : %d", lConfig->getContextId(), (int)lError);
+                    ROS_ERROR("Failed initializing right motor, CONTEXT_ID: %d, EZW_ERR: SMCService : COSDBusClient::init() return error code : %d",
+                              lConfig->getContextId(), (int)lError);
                     return;
                 }
 
@@ -92,7 +94,8 @@ namespace ezw
                 auto lCANOpenDispatcher = std::make_shared<ezw::smccore::CANOpenDispatcher>(lConfig, lCOSClient);
                 lError                  = lCANOpenDispatcher->init();
                 if (lError != ERROR_NONE) {
-                    ROS_ERROR("Failed initializing right motor, CONTEXT_ID: %d, EZW_ERR: SMCService : CANOpenDispatcher::init() return error code : %d", lConfig->getContextId(), (int)lError);
+                    ROS_ERROR("Failed initializing right motor, CONTEXT_ID: %d, EZW_ERR: SMCService : CANOpenDispatcher::init() return error code : %d",
+                              lConfig->getContextId(), (int)lError);
                     return;
                 }
 
@@ -111,7 +114,8 @@ namespace ezw
                 auto lConfig = std::make_shared<ezw::smccore::Config>();
                 lError       = lConfig->load(m_left_config_file);
                 if (lError != ERROR_NONE) {
-                    ROS_ERROR("Failed loading left motor's config file <%s>, CONTEXT_ID: %d, EZW_ERR: SMCService : Config.init() return error code : %d", m_right_config_file.c_str(), CON_APP, (int)lError);
+                    ROS_ERROR("Failed loading left motor's config file <%s>, CONTEXT_ID: %d, EZW_ERR: SMCService : Config.init() return error code : %d",
+                              m_right_config_file.c_str(), CON_APP, (int)lError);
                     return;
                 }
 
