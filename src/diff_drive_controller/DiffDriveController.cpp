@@ -158,6 +158,21 @@ namespace ezw
 
             m_timer_odom     = m_nh->createTimer(ros::Duration(1.0 / m_pub_freq_hz), boost::bind(&DiffDriveController::cbTimerOdom, this));
             m_timer_watchdog = m_nh->createTimer(ros::Duration(m_watchdog_receive_ms / 1000.0), boost::bind(&DiffDriveController::cbWatchdog, this));
+            m_timer_pds      = m_nh->createTimer(ros::Duration(1), boost::bind(&DiffDriveController::cbTimerPDS, this));
+        }
+
+        void DiffDriveController::cbTimerPDS()
+        {
+            smccore::IService::PDSState lPDSState = smccore::IService::PDSState::SWITCH_ON_DISABLED;
+            ezw_error_t                 lError    = m_left_controller.getPDSState(lPDSState);
+            if (lPDSState != smccore::IService::PDSState::OPERATION_ENABLED) {
+                m_left_controller.enterInOperationEnabledState();
+            }
+
+            lError = m_right_controller.getPDSState(lPDSState);
+            if (lPDSState != smccore::IService::PDSState::OPERATION_ENABLED) {
+                m_right_controller.enterInOperationEnabledState();
+            }
         }
 
         void DiffDriveController::cbTimerOdom()
