@@ -65,8 +65,6 @@ namespace ezw
                 throw std::runtime_error("pub_freq_hz parameter is mandatory and must be > 0");
             }
 
-            int lContextId = CON_APP; // Canaux de log, donc on s'en fout.
-
             ROS_INFO("Motors config files, right : %s, left : %s", m_right_config_file.c_str(), m_left_config_file.c_str());
 
             ezw_error_t lError;
@@ -104,7 +102,7 @@ namespace ezw
 
                 lError = m_right_controller.init(lConfig, lCANOpenDispatcher);
                 if (ERROR_NONE != lError) {
-                    ROS_ERROR("Failed initializing right motor, CONTEXT_ID: %d, EZW_ERR: SMCService : Controller::init() return error code : %d", (int)lError);
+                    ROS_ERROR("Failed initializing right motor, EZW_ERR: SMCService : Controller::init() return error code : %d", (int)lError);
                     throw std::runtime_error("Failed initializing right motor");
                 }
             } else {
@@ -129,7 +127,7 @@ namespace ezw
                 auto lCOSClient = std::make_shared<ezw::canopenservice::DBusClient>();
                 lError = lCOSClient->init();
                 if (lError != ERROR_NONE) {
-                    ROS_ERROR("Failed initializing left motor, CONTEXT_ID: %d, EZW_ERR: SMCService : COSDBusClient::init() return error code : %d", (int)lError);
+                    ROS_ERROR("Failed initializing left motor, EZW_ERR: SMCService : COSDBusClient::init() return error code : %d", (int)lError);
                     throw std::runtime_error("Failed initializing left motor");
                 }
 
@@ -137,13 +135,13 @@ namespace ezw
                 auto lCANOpenDispatcher = std::make_shared<ezw::smccore::CANOpenDispatcher>(lConfig, lCOSClient);
                 lError = lCANOpenDispatcher->init();
                 if (lError != ERROR_NONE) {
-                    ROS_ERROR("Failed initializing left motor, CONTEXT_ID: %d, EZW_ERR: SMCService : CANOpenDispatcher::init() return error code : %d", (int)lError);
+                    ROS_ERROR("Failed initializing left motor, EZW_ERR: SMCService : CANOpenDispatcher::init() return error code : %d", (int)lError);
                     throw std::runtime_error("Failed initializing left motor");
                 }
 
                 lError = m_left_controller.init(lConfig, lCANOpenDispatcher);
                 if (ERROR_NONE != lError) {
-                    ROS_ERROR("Failed initializing left motor, CONTEXT_ID: %d, EZW_ERR: SMCService : Controller::init() return error code : %d", (int)lError);
+                    ROS_ERROR("Failed initializing left motor, EZW_ERR: SMCService : Controller::init() return error code : %d", (int)lError);
                     throw std::runtime_error("Failed initializing left motor");
                 }
             } else {
@@ -172,12 +170,20 @@ namespace ezw
         void DiffDriveController::cbTimerPDS()
         {
             smccore::IService::PDSState lPDSState = smccore::IService::PDSState::SWITCH_ON_DISABLED;
-            ezw_error_t                 lError    = m_left_controller.getPDSState(lPDSState);
+            ezw_error_t lError = m_left_controller.getPDSState(lPDSState);
+            if (ERROR_NONE != lError) {
+                ROS_ERROR("Failed to get the PDSState for left motor, EZW_ERR: SMCService : Controller::getPDSState() return error code : %d", (int)lError);
+            }
+
             if (lPDSState != smccore::IService::PDSState::OPERATION_ENABLED) {
                 m_left_controller.enterInOperationEnabledState();
             }
 
             lError = m_right_controller.getPDSState(lPDSState);
+            if (ERROR_NONE != lError) {
+                ROS_ERROR("Failed to get the PDSState for right motor, EZW_ERR: SMCService : Controller::getPDSState() return error code : %d", (int)lError);
+            }
+
             if (lPDSState != smccore::IService::PDSState::OPERATION_ENABLED) {
                 m_right_controller.enterInOperationEnabledState();
             }
