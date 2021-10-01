@@ -8,6 +8,7 @@
 
 #include <ros/console.h>
 #include <ros/ros.h>
+#include <cstdlib>
 
 using namespace std::chrono_literals;
 
@@ -27,8 +28,13 @@ int main(int argc, char **argv)
 
     ROS_INFO("Ready !");
 
-    auto                                          nh = std::make_shared<ros::NodeHandle>("~");
-    ezw::diffdrivecontroller::DiffDriveController diffDriveController(nh);
+    auto nh = std::make_shared<ros::NodeHandle>("~");
+    try {
+        ezw::diffdrivecontroller::DiffDriveController diffDriveController(nh);
+        ros::spin();
+    } catch std::runtime_error& err {
+        ROS_ERROR("FATAL ERROR, exception '%s'", err.what());
+        std::exit(EXIT_FAILURE);
+    }
 
-    ros::spin();
 }
