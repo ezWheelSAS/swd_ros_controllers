@@ -349,23 +349,23 @@ catkin_package(
 # )
 
 file(GLOB_RECURSE HEADERS include/*.hpp)
-file(GLOB_RECURSE SOURCES_DRIVE_CTRL src/drive_controller/*.cpp)
+# file(GLOB_RECURSE SOURCES_DRIVE_CTRL src/drive_controller/*.cpp)
 file(GLOB_RECURSE SOURCES_DIFF_CRTL src/diff_drive_controller/*.cpp)
 file(GLOB_RECURSE SOURCES src/*.cpp)
 
-add_executable(drive_controller ${SOURCES_DRIVE_CTRL} ${COMMON_SOURCES} ${HEADERS})
-add_dependencies(drive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_executable(drive_controller ${SOURCES_DRIVE_CTRL} ${COMMON_SOURCES} ${HEADERS})
+# add_dependencies(drive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(diff_drive_controller ${SOURCES_DIFF_CRTL} ${COMMON_SOURCES} ${HEADERS})
 add_dependencies(diff_drive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 # Specify libraries to link a library or executable target against
-target_link_libraries(
-  drive_controller
-  ${EZW_LOG_LIBRARIES}
-  ${EZW_SMC_CORE_LIBRARIES}
-  ${catkin_LIBRARIES}
-)
+# target_link_libraries(
+#   drive_controller
+#   ${EZW_LOG_LIBRARIES}
+#   ${EZW_SMC_CORE_LIBRARIES}
+#   ${catkin_LIBRARIES}
+# )
 
 # Specify libraries to link a library or executable target against
 target_link_libraries(
@@ -401,12 +401,12 @@ add_custom_target(other_files SOURCES ${OTHER_FILES})
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
 
-install(
-  TARGETS drive_controller
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+# install(
+#   TARGETS drive_controller
+#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
 
 install(
   TARGETS diff_drive_controller
@@ -418,7 +418,6 @@ install(
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 install(
   FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/launch/drive_controller.launch
   ${CMAKE_CURRENT_SOURCE_DIR}/launch/diff_drive_controller.launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
