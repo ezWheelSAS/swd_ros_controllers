@@ -12,6 +12,7 @@
 #include "ezw-smc-core/Controller.hpp"
 
 #include <geometry_msgs/Point.h>
+#include <std_msgs/String.h>
 #include <geometry_msgs/Twist.h>
 
 #include <cmath>
@@ -61,6 +62,7 @@ namespace ezw
             void setSpeeds(int32_t left_speed, int32_t right_speed);
             void cbSetSpeed(const geometry_msgs::PointConstPtr &speed);
             void cbCmdVel(const geometry_msgs::TwistPtr &speed);
+            void cbSoftBrake(const std_msgs::String::ConstPtr& msg);
             void cbTimerOdom(), cbWatchdog(), cbTimerPDS();
 
             inline double boundAngle(double a)

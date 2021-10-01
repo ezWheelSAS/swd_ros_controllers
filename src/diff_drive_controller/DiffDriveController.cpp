@@ -41,12 +41,14 @@ namespace ezw
             m_ref_wheel           = m_nh->param("ref_wheel", -1);
             std::string ctrl_mode = m_nh->param("control_mode", std::string("Twist"));
 
+            m_nh->subscribe("soft_brake", 5, &DiffDriveController::cbSoftBrake, this);
+
             if ("Twist" == ctrl_mode) {
                 m_sub_command = m_nh->subscribe("cmd_vel", 5, &DiffDriveController::cbCmdVel, this);
             } else if ("LeftRightSpeeds" == ctrl_mode) {
                 m_sub_command = m_nh->subscribe("set_speed", 5, &DiffDriveController::cbSetSpeed, this);
             } else {
-                ROS_ERROR("Invalid value '%s' for parameter 'control_mode', accepted values: ['Twist' (default) or 'LeftRightSpeeds']", ctrl_mode);
+                ROS_ERROR("Invalid value '%s' for parameter 'control_mode', accepted values: ['Twist' (default) or 'LeftRightSpeeds']", ctrl_mode.c_str());
                 throw std::runtime_error("Invalid value for parameter 'control_mode'");
             }
 
@@ -181,6 +183,23 @@ namespace ezw
             }
         }
 
+        void DiffDriveController::cbSoftBrake(const std_msgs::String::ConstPtr& msg)
+        {
+            // "enable" or something else -> Stop
+            // "disable" -> Release
+            bool halt = ("disable" == msg->data) ? false : true;
+
+            ezw_error_t lError = m_left_controller.setHalt(halt);
+            if (ERROR_NONE != lError) {
+                ROS_ERROR("SoftBrake: Failed %s left wheel, EZW_ERR: %d", halt ? "braking" : "releasing", (int)lError);
+            }
+
+            lError = m_right_controller.setHalt(halt);
+            if (ERROR_NONE != lError) {
+                ROS_ERROR("SoftBrake: Failed %s right wheel, EZW_ERR: %d", halt ? "braking" : "releasing", (int)lError);
+            }
+        }
+
         void DiffDriveController::cbTimerOdom()
         {
             nav_msgs::Odometry              msg_odom;
@@ -307,6 +326,9 @@ namespace ezw
             setSpeeds(left, right);
         }
 
+        ///
+        /// \brief Change robot velocity (left in rpm, right in rpm)
+        ///
         void DiffDriveController::setSpeeds(int32_t left_speed, int32_t right_speed)
         {
             ezw_error_t lError = m_left_controller.setTargetVelocity(left_speed); // en rpm

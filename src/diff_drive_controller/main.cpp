@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     try {
         ezw::diffdrivecontroller::DiffDriveController diffDriveController(nh);
         ros::spin();
-    } catch std::runtime_error& err {
+    } catch (std::runtime_error& err) {
         ROS_ERROR("FATAL ERROR, exception '%s'", err.what());
         std::exit(EXIT_FAILURE);
     }
