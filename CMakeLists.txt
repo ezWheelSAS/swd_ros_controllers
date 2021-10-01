@@ -166,8 +166,8 @@ find_package(
 # Project configuration
 #------------------------------------------------------------------------------
 
-# include_directories(include)
-# include_directories(/opt/ezw/usr/include/dbus-1.0)
+ include_directories(include)
+ include_directories(/opt/ezw/usr/include/dbus-1.0)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 

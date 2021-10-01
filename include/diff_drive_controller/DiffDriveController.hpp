@@ -49,7 +49,7 @@ namespace ezw
 
             // Param
             double      m_baseline_m, m_left_wheel_diameter_m, m_right_wheel_diameter_m, m_l_motor_reduction, m_r_motor_reduction;
-            int         m_pub_freq_hz, m_watchdog_receive_ms;
+            int         m_pub_freq_hz, m_watchdog_receive_ms, m_ref_wheel;
             std::string m_odom_frame, m_base_link, m_left_config_file, m_right_config_file;
 
             ros::Timer               m_timer_odom, m_timer_watchdog, m_timer_pds;
@@ -69,6 +69,6 @@ namespace ezw
             }
         };
     } // namespace diffdrivecontroller
-} // namespace ezw
+}     // namespace ezw
 
 #endif /* EZW_ROSCONTROLLERS_DIFFDRIVECONTROLLER_HPP */

@@ -39,7 +39,7 @@ namespace ezw
 
             /* CANOpenService client init */
             auto lCOSClient = std::make_shared<ezw::canopenservice::DBusClient>();
-            lError          = lCOSClient->init();
+            lError = lCOSClient->init();
             if (lError != ERROR_NONE) {
                 EZW_LOG(lConfig->getContextId(), EZW_LOG_ERROR, EZW_STR(("SMCService : COSDBusClient::init() return error code : " + std::to_string(lError)).c_str()));
                 return;
@@ -47,7 +47,7 @@ namespace ezw
 
             /* CANOpenDispatcher */
             auto lCANOpenDispatcher = std::make_shared<ezw::smccore::CANOpenDispatcher>(lConfig, lCOSClient);
-            lError                  = lCANOpenDispatcher->init();
+            lError = lCANOpenDispatcher->init();
             if (lError != ERROR_NONE) {
                 EZW_LOG(lConfig->getContextId(), EZW_LOG_ERROR, EZW_STR(("SMCService : CANOpenDispatcher::init() return error code : " + std::to_string(lError)).c_str()));
 
@@ -129,4 +129,4 @@ namespace ezw
             cbSetSpeed(msg);
         }
     } // namespace drivecontroller
-} // namespace ezw
+}     // namespace ezw
