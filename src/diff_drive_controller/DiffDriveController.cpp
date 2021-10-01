@@ -12,7 +12,6 @@
 
 #include <geometry_msgs/TransformStamped.h>
 #include <nav_msgs/Odometry.h>
-#include <sensor_msgs/JointState.h>
 
 #include <ros/console.h>
 #include <ros/duration.h>
@@ -29,7 +28,6 @@ namespace ezw
         DiffDriveController::DiffDriveController(const std::shared_ptr<ros::NodeHandle> nh) : m_nh(nh)
         {
             m_pub_odom        = m_nh->advertise<nav_msgs::Odometry>("odom", 5);
-            m_pub_joint_state = m_nh->advertise<sensor_msgs::JointState>("joint_state", 5);
 
             ROS_INFO("Node name : %s", ros::this_node::getName().c_str());
 
@@ -209,7 +207,6 @@ namespace ezw
         void DiffDriveController::cbTimerOdom()
         {
             nav_msgs::Odometry              msg_odom;
-            sensor_msgs::JointState         msg_joint_state;
             geometry_msgs::TransformStamped tf_odom_baselink;
 
             // Toutes les longueurs sont en mètres
@@ -232,15 +229,6 @@ namespace ezw
             double d_dist_right = (right_dist_now - m_dist_right_prev) / 1000.0;
 
             ros::Time timestamp = ros::Time::now();
-
-            // msg joint
-            msg_joint_state.name.push_back("left_motor");
-            msg_joint_state.name.push_back("right_motor");
-            msg_joint_state.position.push_back(left_dist_now / 1000.0);
-            msg_joint_state.position.push_back(right_dist_now / 1000.0);
-            msg_joint_state.velocity.push_back(d_dist_left / m_pub_freq_hz);
-            msg_joint_state.velocity.push_back(d_dist_right / m_pub_freq_hz);
-            msg_joint_state.header.stamp = timestamp;
 
             // Kinematic model
             double d_dist_center = (d_dist_left + d_dist_right) / 2.0;
@@ -271,7 +259,6 @@ namespace ezw
             msg_odom.pose.pose.orientation.w = quat_orientation.getW();
 
             m_pub_odom.publish(msg_odom);
-            m_pub_joint_state.publish(msg_joint_state);
 
             tf_odom_baselink.header.stamp    = timestamp;
             tf_odom_baselink.header.frame_id = m_odom_frame;
@@ -280,7 +267,10 @@ namespace ezw
             tf_odom_baselink.transform.translation.x = msg_odom.pose.pose.position.x;
             tf_odom_baselink.transform.translation.y = msg_odom.pose.pose.position.y;
             tf_odom_baselink.transform.translation.z = msg_odom.pose.pose.position.z;
-            tf_odom_baselink.transform.rotation      = msg_odom.pose.pose.orientation;
+            tf_odom_baselink.transform.rotation.x = msg_odom.pose.pose.orientation.x;
+            tf_odom_baselink.transform.rotation.y = msg_odom.pose.pose.orientation.y;
+            tf_odom_baselink.transform.rotation.z = msg_odom.pose.pose.orientation.z;
+            tf_odom_baselink.transform.rotation.w = msg_odom.pose.pose.orientation.w;
 
             // Send TF
             m_tf2_br.sendTransform(tf_odom_baselink);
