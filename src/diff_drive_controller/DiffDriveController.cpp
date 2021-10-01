@@ -39,7 +39,7 @@ namespace ezw
             m_ref_wheel           = m_nh->param("ref_wheel", -1);
             std::string ctrl_mode = m_nh->param("control_mode", std::string("Twist"));
 
-            m_nh->subscribe("soft_brake", 5, &DiffDriveController::cbSoftBrake, this);
+            m_sub_brake = m_nh->subscribe("soft_brake", 5, &DiffDriveController::cbSoftBrake, this);
 
             if ("Twist" == ctrl_mode) {
                 m_sub_command = m_nh->subscribe("cmd_vel", 5, &DiffDriveController::cbCmdVel, this);
