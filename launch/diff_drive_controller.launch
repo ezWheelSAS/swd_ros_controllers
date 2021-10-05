@@ -5,13 +5,13 @@
         output="screen">
         <rosparam param="baseline_m">0.485</rosparam>
         <rosparam param="pub_freq_hz">50</rosparam>
-	<rosparam param="left_config_file">"/opt/ezw/usr/etc/ezw-smc-core/left_drive_config.ini"</rosparam>
-	<rosparam param="right_config_file">"/opt/ezw/usr/etc/ezw-smc-core/right_drive_config.ini"</rosparam>
+        <rosparam param="left_config_file">"/opt/ezw/usr/etc/ezw-smc-core/left_drive_config.ini"</rosparam>
+        <rosparam param="right_config_file">"/opt/ezw/usr/etc/ezw-smc-core/right_drive_config.ini"</rosparam>
         <rosparam param="watchdog_receive_ms">1000</rosparam>
         <rosparam param="control_mode">"Twist"</rosparam>
         <rosparam param="odom_frame">"odom"</rosparam>
         <rosparam param="base_link">"base_link"</rosparam>
-        <rosparam param="ref_wheel">"-1"</rosparam>
+        <rosparam param="ref_wheel">"Left"</rosparam>
     </node>
 
 </launch>

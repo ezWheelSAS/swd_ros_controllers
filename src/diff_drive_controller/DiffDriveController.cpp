@@ -27,40 +27,51 @@ namespace ezw
     {
         DiffDriveController::DiffDriveController(const std::shared_ptr<ros::NodeHandle> nh) : m_nh(nh)
         {
-            m_pub_odom        = m_nh->advertise<nav_msgs::Odometry>("odom", 5);
-
-            ROS_INFO("Node name : %s", ros::this_node::getName().c_str());
+            ROS_INFO("Initializing ezw-diff-drive-controller, node name : %s", ros::this_node::getName().c_str());
 
             m_baseline_m          = m_nh->param("baseline_m", 0.0);
             m_pub_freq_hz         = m_nh->param("pub_freq_hz", 50);
             m_watchdog_receive_ms = m_nh->param("watchdog_receive_ms", 1000);
             m_base_link           = m_nh->param("base_link", std::string("base_link"));
             m_odom_frame          = m_nh->param("odom_frame", std::string("odom"));
-            m_ref_wheel           = m_nh->param("ref_wheel", -1);
+            m_left_config_file    = m_nh->param("left_config_file", std::string(""));
+            m_right_config_file   = m_nh->param("right_config_file", std::string(""));
+            std::string ref_wheel = m_nh->param("ref_wheel", std::string("Right"));
             std::string ctrl_mode = m_nh->param("control_mode", std::string("Twist"));
 
+            m_pub_odom  = m_nh->advertise<nav_msgs::Odometry>("odom", 5);
             m_sub_brake = m_nh->subscribe("soft_brake", 5, &DiffDriveController::cbSoftBrake, this);
 
-            if ("Twist" == ctrl_mode) {
-                m_sub_command = m_nh->subscribe("cmd_vel", 5, &DiffDriveController::cbCmdVel, this);
-            } else if ("LeftRightSpeeds" == ctrl_mode) {
+            if ("LeftRightSpeeds" == ctrl_mode) {
                 m_sub_command = m_nh->subscribe("set_speed", 5, &DiffDriveController::cbSetSpeed, this);
             } else {
-                ROS_ERROR("Invalid value '%s' for parameter 'control_mode', accepted values: ['Twist' (default) or 'LeftRightSpeeds']", ctrl_mode.c_str());
-                throw std::runtime_error("Invalid value for parameter 'control_mode'");
+                m_sub_command = m_nh->subscribe("cmd_vel", 5, &DiffDriveController::cbCmdVel, this);
+                if ("Twist" != ctrl_mode) {
+                    ROS_ERROR("Invalid value '%s' for parameter 'control_mode', accepted values: ['Twist' (default) or 'LeftRightSpeeds']."
+                              "Falling back to default (Twist).",
+                              ctrl_mode.c_str());
+                }
             }
 
-            m_left_config_file  = m_nh->param("left_config_file", std::string(""));
-            m_right_config_file = m_nh->param("right_config_file", std::string(""));
+            if ("Left" == ref_wheel) {
+                m_ref_wheel = -1;
+            } else {
+                m_ref_wheel = 1;
+                if ("Right" != ctrl_mode) {
+                    ROS_ERROR("Invalid value '%s' for parameter 'ref_wheel', accepted values: ['Right' (default) or 'Left']."
+                              "Falling back to default (Right).",
+                              ref_wheel.c_str());
+                }
+            }
+
+            if (m_pub_freq_hz <= 0) {
+                ROS_ERROR("pub_freq_hz parameter is mandatory and must be > 0."
+                          "Falling back to default (50Hz).");
+            }
 
             if (m_baseline_m <= 0) {
                 ROS_ERROR("baseline_m parameter is mandatory and must be > 0");
                 throw std::runtime_error("baseline_m parameter is mandatory and must be > 0");
-            }
-
-            if (m_pub_freq_hz <= 0) {
-                ROS_ERROR("pub_freq_hz parameter is mandatory and must be > 0");
-                throw std::runtime_error("pub_freq_hz parameter is mandatory and must be > 0");
             }
 
             ROS_INFO("Motors config files, right : %s, left : %s", m_right_config_file.c_str(), m_left_config_file.c_str());
@@ -70,10 +81,9 @@ namespace ezw
             if ("" != m_right_config_file) {
                 /* Config init */
                 auto lConfig = std::make_shared<ezw::smccore::Config>();
-                lError = lConfig->load(m_right_config_file);
+                lError       = lConfig->load(m_right_config_file);
                 if (lError != ERROR_NONE) {
-                    ROS_ERROR("Failed loading right motor's config file <%s>, CONTEXT_ID: %d, EZW_ERR: SMCService : Config.init() return error code : %d",
-                              m_right_config_file.c_str(), CON_APP, (int)lError);
+                    ROS_ERROR("Failed loading right motor's config file <%s>, CONTEXT_ID: %d, EZW_ERR: SMCService : Config.init() return error code : %d", m_right_config_file.c_str(), CON_APP, (int)lError);
                     throw std::runtime_error("Failed loading right motor's config file");
                 }
 
@@ -82,20 +92,18 @@ namespace ezw
 
                 /* CANOpenService client init */
                 auto lCOSClient = std::make_shared<ezw::canopenservice::DBusClient>();
-                lError = lCOSClient->init();
+                lError          = lCOSClient->init();
                 if (lError != ERROR_NONE) {
-                    ROS_ERROR("Failed initializing right motor, CONTEXT_ID: %d, EZW_ERR: SMCService : COSDBusClient::init() return error code : %d",
-                              lConfig->getContextId(), (int)lError);
+                    ROS_ERROR("Failed initializing right motor, CONTEXT_ID: %d, EZW_ERR: SMCService : COSDBusClient::init() return error code : %d", lConfig->getContextId(), (int)lError);
                     throw std::runtime_error("Failed initializing right motor");
                 }
 
                 /* CANOpenDispatcher */
                 auto lCANOpenDispatcher = std::make_shared<ezw::smccore::CANOpenDispatcher>(lConfig, lCOSClient);
-                lError = lCANOpenDispatcher->init();
+                lError                  = lCANOpenDispatcher->init();
                 if (lError != ERROR_NONE) {
-                   ROS_ERROR("Failed initializing right motor, CONTEXT_ID: %d, EZW_ERR: SMCService : CANOpenDispatcher::init() return error code : %d",
-                              lConfig->getContextId(), (int)lError);
-                   throw std::runtime_error("Failed initializing right motor");
+                    ROS_ERROR("Failed initializing right motor, CONTEXT_ID: %d, EZW_ERR: SMCService : CANOpenDispatcher::init() return error code : %d", lConfig->getContextId(), (int)lError);
+                    throw std::runtime_error("Failed initializing right motor");
                 }
 
                 lError = m_right_controller.init(lConfig, lCANOpenDispatcher);
@@ -111,10 +119,9 @@ namespace ezw
             if ("" != m_left_config_file) {
                 /* Config init */
                 auto lConfig = std::make_shared<ezw::smccore::Config>();
-                lError = lConfig->load(m_left_config_file);
+                lError       = lConfig->load(m_left_config_file);
                 if (lError != ERROR_NONE) {
-                    ROS_ERROR("Failed loading left motor's config file <%s>, CONTEXT_ID: %d, EZW_ERR: SMCService : Config.init() return error code : %d",
-                              m_right_config_file.c_str(), CON_APP, (int)lError);
+                    ROS_ERROR("Failed loading left motor's config file <%s>, CONTEXT_ID: %d, EZW_ERR: SMCService : Config.init() return error code : %d", m_right_config_file.c_str(), CON_APP, (int)lError);
                     throw std::runtime_error("Failed initializing left motor");
                 }
 
@@ -123,7 +130,7 @@ namespace ezw
 
                 /* CANOpenService client init */
                 auto lCOSClient = std::make_shared<ezw::canopenservice::DBusClient>();
-                lError = lCOSClient->init();
+                lError          = lCOSClient->init();
                 if (lError != ERROR_NONE) {
                     ROS_ERROR("Failed initializing left motor, EZW_ERR: SMCService : COSDBusClient::init() return error code : %d", (int)lError);
                     throw std::runtime_error("Failed initializing left motor");
@@ -131,7 +138,7 @@ namespace ezw
 
                 /* CANOpenDispatcher */
                 auto lCANOpenDispatcher = std::make_shared<ezw::smccore::CANOpenDispatcher>(lConfig, lCOSClient);
-                lError = lCANOpenDispatcher->init();
+                lError                  = lCANOpenDispatcher->init();
                 if (lError != ERROR_NONE) {
                     ROS_ERROR("Failed initializing left motor, EZW_ERR: SMCService : CANOpenDispatcher::init() return error code : %d", (int)lError);
                     throw std::runtime_error("Failed initializing left motor");
@@ -151,13 +158,11 @@ namespace ezw
             lError = m_left_controller.getPositionValue(m_dist_left_prev); // en mm
             if (ERROR_NONE != lError) {
                 ROS_ERROR("Failed initial reading from left motor, EZW_ERR: SMCService : Controller::getPositionValue() return error code : %d", (int)lError);
-                throw std::runtime_error("Failed initial reading from left motor");
             }
 
             lError = m_right_controller.getPositionValue(m_dist_right_prev); // en mm
             if (ERROR_NONE != lError) {
                 ROS_ERROR("Failed initial reading from right motor, EZW_ERR: SMCService : Controller::getPositionValue() return error code : %d", (int)lError);
-                throw std::runtime_error("Failed initial reading from right motor");
             }
 
             m_timer_odom     = m_nh->createTimer(ros::Duration(1.0 / m_pub_freq_hz), boost::bind(&DiffDriveController::cbTimerOdom, this));
@@ -168,7 +173,7 @@ namespace ezw
         void DiffDriveController::cbTimerPDS()
         {
             smccore::IService::PDSState lPDSState = smccore::IService::PDSState::SWITCH_ON_DISABLED;
-            ezw_error_t lError = m_left_controller.getPDSState(lPDSState);
+            ezw_error_t                 lError    = m_left_controller.getPDSState(lPDSState);
             if (ERROR_NONE != lError) {
                 ROS_ERROR("Failed to get the PDSState for left motor, EZW_ERR: SMCService : Controller::getPDSState() return error code : %d", (int)lError);
             }
@@ -187,7 +192,7 @@ namespace ezw
             }
         }
 
-        void DiffDriveController::cbSoftBrake(const std_msgs::String::ConstPtr& msg)
+        void DiffDriveController::cbSoftBrake(const std_msgs::String::ConstPtr &msg)
         {
             // "enable" or something else -> Stop
             // "disable" -> Release
@@ -267,10 +272,10 @@ namespace ezw
             tf_odom_baselink.transform.translation.x = msg_odom.pose.pose.position.x;
             tf_odom_baselink.transform.translation.y = msg_odom.pose.pose.position.y;
             tf_odom_baselink.transform.translation.z = msg_odom.pose.pose.position.z;
-            tf_odom_baselink.transform.rotation.x = msg_odom.pose.pose.orientation.x;
-            tf_odom_baselink.transform.rotation.y = msg_odom.pose.pose.orientation.y;
-            tf_odom_baselink.transform.rotation.z = msg_odom.pose.pose.orientation.z;
-            tf_odom_baselink.transform.rotation.w = msg_odom.pose.pose.orientation.w;
+            tf_odom_baselink.transform.rotation.x    = msg_odom.pose.pose.orientation.x;
+            tf_odom_baselink.transform.rotation.y    = msg_odom.pose.pose.orientation.y;
+            tf_odom_baselink.transform.rotation.z    = msg_odom.pose.pose.orientation.z;
+            tf_odom_baselink.transform.rotation.w    = msg_odom.pose.pose.orientation.w;
 
             // Send TF
             m_tf2_br.sendTransform(tf_odom_baselink);
@@ -349,4 +354,4 @@ namespace ezw
             setSpeeds(0, 0);
         }
     } // namespace diffdrivecontroller
-}     // namespace ezw
+} // namespace ezw
