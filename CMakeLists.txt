@@ -24,6 +24,7 @@ find_package(
   sensor_msgs
   geometry_msgs
   tf2_ros
+  message_generation
 )
 
 
@@ -286,17 +287,18 @@ add_definitions(
 # )
 # add_custom_target(coverity DEPENDS ${COVERITY_FILES})
 
+add_message_files(
+    FILES
+    SafetyFunctions.msg
+)
 
 #------------------------------------------------------------------------------
 # ROS generate messages
 #------------------------------------------------------------------------------
-# generate_messages(
-#   DEPENDENCIES
-#   geometry_msgs
-#   std_msgs
-#   nav_msgs
-#   sensor_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
