@@ -43,7 +43,7 @@ namespace ezw
             DiffDriveController(const std::shared_ptr<ros::NodeHandle> nh);
 
           private:
-            ros::Publisher                   m_pub_odom;
+            ros::Publisher                   m_pub_odom, m_pub_safety;
             ros::Subscriber                  m_sub_command, m_sub_brake;
             std::shared_ptr<ros::NodeHandle> m_nh;
             tf2_ros::TransformBroadcaster    m_tf2_br;
@@ -53,7 +53,7 @@ namespace ezw
             int         m_pub_freq_hz, m_watchdog_receive_ms, m_ref_wheel;
             std::string m_odom_frame, m_base_link, m_left_config_file, m_right_config_file;
 
-            ros::Timer               m_timer_odom, m_timer_watchdog, m_timer_pds;
+            ros::Timer               m_timer_odom, m_timer_watchdog, m_timer_pds, m_timer_safety;
             ezw::smccore::Controller m_left_controller, m_right_controller;
 
             double  m_x_prev = 0, m_y_prev = 0, m_theta_prev = 0;
@@ -63,7 +63,7 @@ namespace ezw
             void cbSetSpeed(const geometry_msgs::PointConstPtr &speed);
             void cbCmdVel(const geometry_msgs::TwistPtr &speed);
             void cbSoftBrake(const std_msgs::String::ConstPtr& msg);
-            void cbTimerOdom(), cbWatchdog(), cbTimerPDS();
+            void cbTimerOdom(), cbWatchdog(), cbTimerPDS(), cbTimerSafety();
 
             inline double boundAngle(double a)
             {

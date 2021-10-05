@@ -1,0 +1,6 @@
+Header header
+bool safe_torque_off
+bool safe_brake_control
+bool safe_limit_speed
+bool safe_direction_indication_pos
+bool safe_direction_indication_neg

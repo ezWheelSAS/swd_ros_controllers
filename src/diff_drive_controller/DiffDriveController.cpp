@@ -13,6 +13,8 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <nav_msgs/Odometry.h>
 
+#include <ezw_ros_controllers/SafetyFunctions.h>
+
 #include <ros/console.h>
 #include <ros/duration.h>
 #include <ros/ros.h>
@@ -39,8 +41,9 @@ namespace ezw
             std::string ref_wheel = m_nh->param("ref_wheel", std::string("Right"));
             std::string ctrl_mode = m_nh->param("control_mode", std::string("Twist"));
 
-            m_pub_odom  = m_nh->advertise<nav_msgs::Odometry>("odom", 5);
-            m_sub_brake = m_nh->subscribe("soft_brake", 5, &DiffDriveController::cbSoftBrake, this);
+            m_pub_odom   = m_nh->advertise<nav_msgs::Odometry>("odom", 5);
+            m_pub_safety = m_nh->advertise<ezw_ros_controllers::SafetyFunctions>("safety", 5);
+            m_sub_brake  = m_nh->subscribe("soft_brake", 5, &DiffDriveController::cbSoftBrake, this);
 
             if ("LeftRightSpeeds" == ctrl_mode) {
                 m_sub_command = m_nh->subscribe("set_speed", 5, &DiffDriveController::cbSetSpeed, this);
@@ -168,6 +171,7 @@ namespace ezw
             m_timer_odom     = m_nh->createTimer(ros::Duration(1.0 / m_pub_freq_hz), boost::bind(&DiffDriveController::cbTimerOdom, this));
             m_timer_watchdog = m_nh->createTimer(ros::Duration(m_watchdog_receive_ms / 1000.0), boost::bind(&DiffDriveController::cbWatchdog, this));
             m_timer_pds      = m_nh->createTimer(ros::Duration(1), boost::bind(&DiffDriveController::cbTimerPDS, this));
+            m_timer_safety   = m_nh->createTimer(ros::Duration(1.0 / 5.0), boost::bind(&DiffDriveController::cbTimerSafety, this));
         }
 
         void DiffDriveController::cbTimerPDS()
@@ -343,6 +347,74 @@ namespace ezw
                 ROS_ERROR("Failed setting velocity of right motor, EZW_ERR: SMCService : Controller::setTargetVelocity() return error code : %d", (int)lError);
                 return;
             }
+        }
+
+        void DiffDriveController::cbTimerSafety()
+        {
+            bool                                 res_l, res_r;
+            ezw_ros_controllers::SafetyFunctions msg;
+            ezw_error_t                          err;
+
+            msg.header.stamp = ros::Time::now();
+
+            // Reading STO
+            err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::STO, res_l);
+            if (ERROR_NONE != err) {
+                ROS_ERROR("Error reading STO from left motor, EZW_ERR: SMCService : Controller::getSafetyFunctionCommand() return error code : %d", (int)err);
+            }
+
+            err = m_right_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::STO, res_r);
+            if (ERROR_NONE != err) {
+                ROS_ERROR("Error reading STO from right motor, EZW_ERR: SMCService : Controller::getSafetyFunctionCommand() return error code : %d", (int)err);
+            }
+
+            msg.safe_torque_off = res_l || res_r;
+
+            if (res_l != res_r) {
+                ROS_ERROR("Inconsistant STO for left and right motors, left=%d, right=%d.", res_l, res_r);
+            }
+
+            // Reading SDI
+            ezw::smccore::Controller::SafetyFunctionId safety_fcn_l, safety_fcn_r;
+
+            if (m_ref_wheel == 1) {
+                // Right
+                safety_fcn_l = ezw::smccore::Controller::SafetyFunctionId::SDIP_1;
+                safety_fcn_r = ezw::smccore::Controller::SafetyFunctionId::SDIN_1;
+            } else {
+                // Left
+                safety_fcn_l = ezw::smccore::Controller::SafetyFunctionId::SDIN_1;
+                safety_fcn_r = ezw::smccore::Controller::SafetyFunctionId::SDIP_1;
+            }
+
+            err = m_left_controller.getSafetyFunctionCommand(safety_fcn_l, res_l);
+            if (ERROR_NONE != err) {
+                ROS_ERROR("Error reading SDI from left motor, EZW_ERR: SMCService : Controller::getSafetyFunctionCommand() return error code : %d", (int)err);
+            }
+
+            err = m_right_controller.getSafetyFunctionCommand(safety_fcn_r, res_r);
+            if (ERROR_NONE != err) {
+                ROS_ERROR("Error reading SDI from right motor, EZW_ERR: SMCService : Controller::getSafetyFunctionCommand() return error code : %d", (int)err);
+            }
+
+            msg.safe_direction_indication_pos = res_r || res_l;
+
+            // Reading SLS
+            err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SLS_1, res_l);
+            if (ERROR_NONE != err) {
+                ROS_ERROR("Error reading SLS from left motor, EZW_ERR: SMCService : Controller::getSafetyFunctionCommand() return error code : %d", (int)err);
+            }
+
+            err = m_right_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SLS_1, res_r);
+            if (ERROR_NONE != err) {
+                ROS_ERROR("Error reading SLS from right motor, EZW_ERR: SMCService : Controller::getSafetyFunctionCommand() return error code : %d", (int)err);
+            }
+
+            msg.safe_limit_speed = res_r || res_l;
+
+            ROS_INFO("STO: %d, SDI+: %d, SLS: %d", msg.safe_torque_off, msg.safe_direction_indication_pos, msg.safe_limit_speed);
+
+            m_pub_safety.publish(msg);
         }
 
         ///
