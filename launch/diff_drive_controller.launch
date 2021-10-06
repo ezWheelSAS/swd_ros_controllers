@@ -12,6 +12,7 @@
         <rosparam param="odom_frame">"odom"</rosparam>
         <rosparam param="base_link">"base_link"</rosparam>
         <rosparam param="ref_wheel">"Left"</rosparam>
+        <rosparam param="publish_safety_functions">true</rosparam>
     </node>
 
 </launch>
