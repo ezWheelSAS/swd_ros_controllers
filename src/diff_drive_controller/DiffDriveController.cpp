@@ -176,22 +176,28 @@ namespace ezw
 
         void DiffDriveController::cbTimerPDS()
         {
-            smccore::IService::PDSState lPDSState = smccore::IService::PDSState::SWITCH_ON_DISABLED;
-            ezw_error_t                 lError    = m_left_controller.getPDSState(lPDSState);
-            if (ERROR_NONE != lError) {
-                ROS_ERROR("Failed to get the PDSState for left motor, EZW_ERR: SMCService : Controller::getPDSState() return error code : %d", (int)lError);
+            smccore::IService::PDSState pds_state_l, pds_state_r;
+
+            pds_state_l = pds_state_r = smccore::IService::PDSState::SWITCH_ON_DISABLED;
+            ezw_error_t                 err_l, err_r;
+
+            err_l = m_left_controller.getPDSState(pds_state_l);
+            err_r = m_right_controller.getPDSState(pds_state_r);
+
+            if (ERROR_NONE != err_l) {
+                ROS_ERROR("Failed to get the PDSState for left motor, EZW_ERR: SMCService : "
+                          "Controller::getPDSState() return error code : %d", (int)lError);
+                return;
             }
 
-            if (lPDSState != smccore::IService::PDSState::OPERATION_ENABLED) {
+            if (ERROR_NONE != lError) {
+                ROS_ERROR("Failed to get the PDSState for right motor, EZW_ERR: SMCService : "
+                          "Controller::getPDSState() return error code : %d", (int)lError);
+                return;
+            }
+
+            if (pds_state_l != smccore::IService::PDSState::OPERATION_ENABLED && pds_state_r != smccore::IService::PDSState::OPERATION_ENABLED) {
                 m_left_controller.enterInOperationEnabledState();
-            }
-
-            lError = m_right_controller.getPDSState(lPDSState);
-            if (ERROR_NONE != lError) {
-                ROS_ERROR("Failed to get the PDSState for right motor, EZW_ERR: SMCService : Controller::getPDSState() return error code : %d", (int)lError);
-            }
-
-            if (lPDSState != smccore::IService::PDSState::OPERATION_ENABLED) {
                 m_right_controller.enterInOperationEnabledState();
             }
         }
