@@ -39,6 +39,8 @@ namespace ezw
             m_odom_frame            = m_nh->param("odom_frame", std::string("odom"));
             m_left_config_file      = m_nh->param("left_config_file", std::string(""));
             m_right_config_file     = m_nh->param("right_config_file", std::string(""));
+            m_publish_odom          = m_nh->param("publish_odom", true);
+            m_publish_tf            = m_nh->param("publish_tf", true);
             std::string ref_wheel   = m_nh->param("ref_wheel", std::string("Right"));
             std::string ctrl_mode   = m_nh->param("control_mode", std::string("Twist"));
             bool        satety_msgs = m_nh->param("publish_safety_functions", true);
@@ -65,7 +67,9 @@ namespace ezw
             }
 
             // Publishers
-            m_pub_odom = m_nh->advertise<nav_msgs::Odometry>("odom", 5);
+            if (m_publish_odom) {
+                m_pub_odom = m_nh->advertise<nav_msgs::Odometry>("odom", 5);
+            }
 
             if (satety_msgs) {
                 m_pub_safety = m_nh->advertise<ezw_ros_controllers::SafetyFunctions>("safety", 5);
@@ -197,9 +201,12 @@ namespace ezw
                           (int)err);
             }
 
-            m_timer_odom     = m_nh->createTimer(ros::Duration(1.0 / m_pub_freq_hz), boost::bind(&DiffDriveController::cbTimerOdom, this));
             m_timer_watchdog = m_nh->createTimer(ros::Duration(m_watchdog_receive_ms / 1000.0), boost::bind(&DiffDriveController::cbWatchdog, this));
             m_timer_pds      = m_nh->createTimer(ros::Duration(1), boost::bind(&DiffDriveController::cbTimerStateMachine, this));
+
+            if (m_publish_odom || m_publish_tf) {
+                m_timer_odom = m_nh->createTimer(ros::Duration(1.0 / m_pub_freq_hz), boost::bind(&DiffDriveController::cbTimerOdom, this));
+            }
 
             if (satety_msgs) {
                 m_timer_safety = m_nh->createTimer(ros::Duration(1.0 / 5.0), boost::bind(&DiffDriveController::cbTimerSafety, this));
@@ -308,21 +315,25 @@ namespace ezw
 
         void DiffDriveController::cbTimerOdom()
         {
-            nav_msgs::Odometry              msg_odom;
-            geometry_msgs::TransformStamped tf_odom_baselink;
+            nav_msgs::Odometry msg_odom;
 
-            // Toutes les longueurs sont en mètres
-            int32_t left_dist_now = 0, right_dist_now = 0;
+            int32_t     left_dist_now = 0, right_dist_now = 0;
+            ezw_error_t err_l, err_r;
 
-            ezw_error_t err = m_left_controller.getPositionValue(left_dist_now); // en mm
-            if (ERROR_NONE != err) {
-                ROS_ERROR("Failed reading from left motor, EZW_ERR: SMCService : Controller::getPositionValue() return error code : %d", (int)err);
+            err_l = m_left_controller.getPositionValue(left_dist_now);   // In mm
+            err_r = m_right_controller.getPositionValue(right_dist_now); // In mm
+
+            if (ERROR_NONE != err_l) {
+                ROS_ERROR("Failed reading from left motor, EZW_ERR: SMCService : "
+                          "Controller::getPositionValue() return error code : %d",
+                          (int)err_l);
                 return;
             }
 
-            err = m_right_controller.getPositionValue(right_dist_now); // en mm
-            if (ERROR_NONE != err) {
-                ROS_ERROR("Failed reading from right motor, EZW_ERR: SMCService : Controller::getPositionValue() return error code : %d", (int)err);
+            if (ERROR_NONE != err_r) {
+                ROS_ERROR("Failed reading from right motor, EZW_ERR: SMCService : "
+                          "Controller::getPositionValue() return error code : %d",
+                          (int)err_r);
                 return;
             }
 
@@ -360,22 +371,27 @@ namespace ezw
             msg_odom.pose.pose.orientation.z = quat_orientation.getZ();
             msg_odom.pose.pose.orientation.w = quat_orientation.getW();
 
-            m_pub_odom.publish(msg_odom);
+            if (m_publish_odom) {
+                m_pub_odom.publish(msg_odom);
+            }
 
-            tf_odom_baselink.header.stamp    = timestamp;
-            tf_odom_baselink.header.frame_id = m_odom_frame;
-            tf_odom_baselink.child_frame_id  = m_base_link;
+            if (m_publish_tf) {
+                geometry_msgs::TransformStamped tf_odom_baselink;
+                tf_odom_baselink.header.stamp    = timestamp;
+                tf_odom_baselink.header.frame_id = m_odom_frame;
+                tf_odom_baselink.child_frame_id  = m_base_link;
 
-            tf_odom_baselink.transform.translation.x = msg_odom.pose.pose.position.x;
-            tf_odom_baselink.transform.translation.y = msg_odom.pose.pose.position.y;
-            tf_odom_baselink.transform.translation.z = msg_odom.pose.pose.position.z;
-            tf_odom_baselink.transform.rotation.x    = msg_odom.pose.pose.orientation.x;
-            tf_odom_baselink.transform.rotation.y    = msg_odom.pose.pose.orientation.y;
-            tf_odom_baselink.transform.rotation.z    = msg_odom.pose.pose.orientation.z;
-            tf_odom_baselink.transform.rotation.w    = msg_odom.pose.pose.orientation.w;
+                tf_odom_baselink.transform.translation.x = msg_odom.pose.pose.position.x;
+                tf_odom_baselink.transform.translation.y = msg_odom.pose.pose.position.y;
+                tf_odom_baselink.transform.translation.z = msg_odom.pose.pose.position.z;
+                tf_odom_baselink.transform.rotation.x    = msg_odom.pose.pose.orientation.x;
+                tf_odom_baselink.transform.rotation.y    = msg_odom.pose.pose.orientation.y;
+                tf_odom_baselink.transform.rotation.z    = msg_odom.pose.pose.orientation.z;
+                tf_odom_baselink.transform.rotation.w    = msg_odom.pose.pose.orientation.w;
 
-            // Send TF
-            m_tf2_br.sendTransform(tf_odom_baselink);
+                // Send TF
+                m_tf2_br.sendTransform(tf_odom_baselink);
+            }
 
             m_x_prev          = x_now;
             m_y_prev          = y_now;

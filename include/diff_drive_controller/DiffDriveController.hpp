@@ -52,6 +52,7 @@ namespace ezw
             double      m_baseline_m, m_left_wheel_diameter_m, m_right_wheel_diameter_m, m_l_motor_reduction, m_r_motor_reduction;
             int         m_pub_freq_hz, m_watchdog_receive_ms, m_ref_wheel;
             std::string m_odom_frame, m_base_link, m_left_config_file, m_right_config_file;
+            bool m_publish_odom, m_publish_tf;
 
             ros::Timer               m_timer_odom, m_timer_watchdog, m_timer_pds, m_timer_safety;
             ezw::smccore::Controller m_left_controller, m_right_controller;
