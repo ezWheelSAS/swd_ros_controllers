@@ -221,6 +221,8 @@ namespace ezw
 
             ezw_error_t err_l, err_r;
 
+            bool do_pds_enter_in_oper = true;
+
             err_l = m_left_controller.getNMTState(nmt_state_l);
             err_r = m_right_controller.getNMTState(nmt_state_r);
 
@@ -237,11 +239,13 @@ namespace ezw
             }
 
             if (nmt_state_l != smccore::Controller::NMTState::OPER) {
-                err_l = m_left_controller.setNMTState(smccore::Controller::NMTCommand::OPER);
+                err_l                = m_left_controller.setNMTState(smccore::Controller::NMTCommand::OPER);
+                do_pds_enter_in_oper = false;
             }
 
             if (nmt_state_r != smccore::Controller::NMTState::OPER) {
-                err_r = m_right_controller.setNMTState(smccore::Controller::NMTCommand::OPER);
+                err_r                = m_right_controller.setNMTState(smccore::Controller::NMTCommand::OPER);
+                do_pds_enter_in_oper = false;
             }
 
             if (ERROR_NONE != err_l && nmt_state_l != smccore::Controller::NMTState::OPER) {
@@ -256,43 +260,45 @@ namespace ezw
                           (int)err_r);
             }
 
-            // PDS state machine
-            smccore::Controller::PDSState pds_state_l, pds_state_r;
-            pds_state_l = pds_state_r = smccore::Controller::PDSState::SWITCH_ON_DISABLED;
+            if (do_pds_enter_in_oper) {
+                // PDS state machine
+                smccore::Controller::PDSState pds_state_l, pds_state_r;
+                pds_state_l = pds_state_r = smccore::Controller::PDSState::SWITCH_ON_DISABLED;
 
-            err_l = m_left_controller.getPDSState(pds_state_l);
-            err_r = m_right_controller.getPDSState(pds_state_r);
+                err_l = m_left_controller.getPDSState(pds_state_l);
+                err_r = m_right_controller.getPDSState(pds_state_r);
 
-            if (ERROR_NONE != err_l) {
-                ROS_ERROR("Failed to get the PDS state for left motor, EZW_ERR: SMCService : "
-                          "Controller::getPDSState() return error code : %d",
-                          (int)err_l);
-            }
+                if (ERROR_NONE != err_l) {
+                    ROS_ERROR("Failed to get the PDS state for left motor, EZW_ERR: SMCService : "
+                              "Controller::getPDSState() return error code : %d",
+                              (int)err_l);
+                }
 
-            if (ERROR_NONE != err_r) {
-                ROS_ERROR("Failed to get the PDS state for right motor, EZW_ERR: SMCService : "
-                          "Controller::getPDSState() return error code : %d",
-                          (int)err_r);
-            }
+                if (ERROR_NONE != err_r) {
+                    ROS_ERROR("Failed to get the PDS state for right motor, EZW_ERR: SMCService : "
+                              "Controller::getPDSState() return error code : %d",
+                              (int)err_r);
+                }
 
-            if (pds_state_l != smccore::Controller::PDSState::OPERATION_ENABLED) {
-                err_l = m_left_controller.enterInOperationEnabledState();
-            }
+                if (pds_state_l != smccore::Controller::PDSState::OPERATION_ENABLED) {
+                    err_l = m_left_controller.enterInOperationEnabledState();
+                }
 
-            if (pds_state_r != smccore::Controller::PDSState::OPERATION_ENABLED) {
-                err_r = m_right_controller.enterInOperationEnabledState();
-            }
+                if (pds_state_r != smccore::Controller::PDSState::OPERATION_ENABLED) {
+                    err_r = m_right_controller.enterInOperationEnabledState();
+                }
 
-            if (ERROR_NONE != err_l && pds_state_l != smccore::Controller::PDSState::OPERATION_ENABLED) {
-                ROS_ERROR("Failed to set PDS state for left motor, EZW_ERR: SMCService : "
-                          "Controller::enterInOperationEnabledState() return error code : %d",
-                          (int)err_l);
-            }
+                if (ERROR_NONE != err_l && pds_state_l != smccore::Controller::PDSState::OPERATION_ENABLED) {
+                    ROS_ERROR("Failed to set PDS state for left motor, EZW_ERR: SMCService : "
+                              "Controller::enterInOperationEnabledState() return error code : %d",
+                              (int)err_l);
+                }
 
-            if (ERROR_NONE != err_r && pds_state_r != smccore::Controller::PDSState::OPERATION_ENABLED) {
-                ROS_ERROR("Failed to set PDS state for right motor, EZW_ERR: SMCService : "
-                          "Controller::enterInOperationEnabledState() return error code : %d",
-                          (int)err_r);
+                if (ERROR_NONE != err_r && pds_state_r != smccore::Controller::PDSState::OPERATION_ENABLED) {
+                    ROS_ERROR("Failed to set PDS state for right motor, EZW_ERR: SMCService : "
+                              "Controller::enterInOperationEnabledState() return error code : %d",
+                              (int)err_r);
+                }
             }
         }
 
