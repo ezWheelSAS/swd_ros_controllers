@@ -63,7 +63,7 @@ namespace ezw
             void cbSetSpeed(const geometry_msgs::PointConstPtr &speed);
             void cbCmdVel(const geometry_msgs::TwistPtr &speed);
             void cbSoftBrake(const std_msgs::String::ConstPtr& msg);
-            void cbTimerOdom(), cbWatchdog(), cbTimerPDS(), cbTimerSafety();
+            void cbTimerOdom(), cbWatchdog(), cbTimerStateMachine(), cbTimerSafety();
 
             inline double boundAngle(double a)
             {
