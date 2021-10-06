@@ -196,18 +196,21 @@ namespace ezw
 
             if (ERROR_NONE != err_l) {
                 ROS_ERROR("Failed to get the PDSState for left motor, EZW_ERR: SMCService : "
-                          "Controller::getPDSState() return error code : %d", (int)lError);
+                          "Controller::getPDSState() return error code : %d", (int)err_l);
                 return;
             }
 
-            if (ERROR_NONE != lError) {
+            if (ERROR_NONE != err_r) {
                 ROS_ERROR("Failed to get the PDSState for right motor, EZW_ERR: SMCService : "
-                          "Controller::getPDSState() return error code : %d", (int)lError);
+                          "Controller::getPDSState() return error code : %d", (int)err_r);
                 return;
             }
 
-            if (pds_state_l != smccore::IService::PDSState::OPERATION_ENABLED && pds_state_r != smccore::IService::PDSState::OPERATION_ENABLED) {
+            if (pds_state_l != smccore::IService::PDSState::OPERATION_ENABLED) {
                 m_left_controller.enterInOperationEnabledState();
+            }
+
+            if (pds_state_r != smccore::IService::PDSState::OPERATION_ENABLED) {
                 m_right_controller.enterInOperationEnabledState();
             }
         }
