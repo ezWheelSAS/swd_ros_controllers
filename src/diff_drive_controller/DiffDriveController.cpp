@@ -13,8 +13,6 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <nav_msgs/Odometry.h>
 
-#include <ezw_ros_controllers/SafetyFunctions.h>
-
 #include <ros/console.h>
 #include <ros/duration.h>
 #include <ros/ros.h>
@@ -32,18 +30,19 @@ namespace ezw
             ROS_INFO("Initializing ezw-diff-drive-controller, node name : %s", ros::this_node::getName().c_str());
 
             // Read parameters
-            m_baseline_m            = m_nh->param("baseline_m", 0.0);
-            m_pub_freq_hz           = m_nh->param("pub_freq_hz", 50);
-            m_watchdog_receive_ms   = m_nh->param("watchdog_receive_ms", 1000);
-            m_base_link             = m_nh->param("base_link", std::string("base_link"));
-            m_odom_frame            = m_nh->param("odom_frame", std::string("odom"));
-            m_left_config_file      = m_nh->param("left_config_file", std::string(""));
-            m_right_config_file     = m_nh->param("right_config_file", std::string(""));
-            m_publish_odom          = m_nh->param("publish_odom", true);
-            m_publish_tf            = m_nh->param("publish_tf", true);
-            std::string ref_wheel   = m_nh->param("ref_wheel", std::string("Right"));
-            std::string ctrl_mode   = m_nh->param("control_mode", std::string("Twist"));
-            bool        satety_msgs = m_nh->param("publish_safety_functions", true);
+            m_baseline_m          = m_nh->param("baseline_m", 0.0);
+            m_pub_freq_hz         = m_nh->param("pub_freq_hz", 50);
+            m_watchdog_receive_ms = m_nh->param("watchdog_receive_ms", 1000);
+            m_base_link           = m_nh->param("base_link", std::string("base_link"));
+            m_odom_frame          = m_nh->param("odom_frame", std::string("odom"));
+            m_left_config_file    = m_nh->param("left_config_file", std::string(""));
+            m_right_config_file   = m_nh->param("right_config_file", std::string(""));
+            m_publish_odom        = m_nh->param("publish_odom", true);
+            m_publish_tf          = m_nh->param("publish_tf", true);
+            m_publish_safety      = m_nh->param("publish_safety_functions", true);
+            m_wheel_sls_rpm       = m_nh->param("wheel_safe_limit_speed_rpm", 300);
+            std::string ref_wheel = m_nh->param("ref_wheel", std::string("Right"));
+            std::string ctrl_mode = m_nh->param("control_mode", std::string("Twist"));
 
             if ("Left" == ref_wheel) {
                 m_ref_wheel = -1;
@@ -71,7 +70,7 @@ namespace ezw
                 m_pub_odom = m_nh->advertise<nav_msgs::Odometry>("odom", 5);
             }
 
-            if (satety_msgs) {
+            if (m_publish_safety) {
                 m_pub_safety = m_nh->advertise<ezw_ros_controllers::SafetyFunctions>("safety", 5);
             }
 
@@ -208,7 +207,7 @@ namespace ezw
                 m_timer_odom = m_nh->createTimer(ros::Duration(1.0 / m_pub_freq_hz), boost::bind(&DiffDriveController::cbTimerOdom, this));
             }
 
-            if (satety_msgs) {
+            if (m_publish_safety) {
                 m_timer_safety = m_nh->createTimer(ros::Duration(1.0 / 5.0), boost::bind(&DiffDriveController::cbTimerSafety, this));
             }
         }
@@ -368,10 +367,10 @@ namespace ezw
 
             msg_odom.pose.pose.position.x = x_now;
             msg_odom.pose.pose.position.y = y_now;
-            msg_odom.pose.pose.position.z = 0;
+            msg_odom.pose.pose.position.z = 0.0;
 
             tf2::Quaternion quat_orientation;
-            quat_orientation.setRPY(0, 0, theta_now);
+            quat_orientation.setRPY(0.0, 0.0, theta_now);
             msg_odom.pose.pose.orientation.x = quat_orientation.getX();
             msg_odom.pose.pose.orientation.y = quat_orientation.getY();
             msg_odom.pose.pose.orientation.z = quat_orientation.getZ();
@@ -443,7 +442,7 @@ namespace ezw
             int32_t left  = static_cast<int32_t>(left_vel * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
             int32_t right = static_cast<int32_t>(right_vel * m_r_motor_reduction * 60.0 / (2.0 * M_PI));
 
-            ROS_INFO("Got cmd_vel command: linear -> %f m/s, angular -> %f rad/s. "
+            ROS_INFO("Got cmd_vel command: linear = %f m/s, angular = %f rad/s. "
                      "Sent to motors (left, right) = (%d, %d) rpm",
                      cmd_vel->linear.x, cmd_vel->angular.z, left, right);
 
@@ -455,6 +454,27 @@ namespace ezw
         ///
         void DiffDriveController::setSpeeds(int32_t left_speed, int32_t right_speed)
         {
+            int32_t max_speed = M_MAX(std::abs(left_speed), std::abs(right_speed));
+
+            if (max_speed > m_wheel_sls_rpm) {
+                if (std::abs(left_speed) > std::abs(right_speed)) {
+                    // Scale right_speed speed
+                    right_speed = static_cast<int32_t>(static_cast<double>(right_speed) * (static_cast<double>(m_wheel_sls_rpm) / static_cast<double>(std::abs(left_speed))));
+
+                    // Limit the left_speed
+                    left_speed = m_wheel_sls_rpm;
+                } else {
+                    // Scale left_speed
+                    left_speed = static_cast<int32_t>(static_cast<double>(left_speed) * (static_cast<double>(m_wheel_sls_rpm) / static_cast<double>(std::abs(right_speed))));
+
+                    // Limit the right_speed
+                    right_speed = m_wheel_sls_rpm;
+                }
+
+                ROS_WARN("Target speed exceeded SLS limit (%d rpm). "
+                         "Speed set to (left, right) (%d, %d) rpm", m_wheel_sls_rpm, left_speed, right_speed);
+            }
+
             ezw_error_t err = m_left_controller.setTargetVelocity(left_speed); // en rpm
             if (ERROR_NONE != err) {
                 ROS_ERROR("Failed setting velocity of right motor, EZW_ERR: SMCService : "
@@ -495,11 +515,13 @@ namespace ezw
                           (int)err);
             }
 
-            msg.safe_torque_off = res_l || res_r;
+            msg.safe_torque_off = !(res_l || res_r);
 
             if (res_l != res_r) {
                 ROS_ERROR("Inconsistant STO for left and right motors, left=%d, right=%d.", res_l, res_r);
             }
+
+            ROS_INFO("STO_L : %d, STO_R : %d", res_l, res_r);
 
             // Reading SDI
             ezw::smccore::Controller::SafetyFunctionId safety_fcn_l, safety_fcn_r;
@@ -528,7 +550,9 @@ namespace ezw
                           (int)err);
             }
 
-            msg.safe_direction_indication_pos = res_r || res_l;
+            msg.safe_direction_indication_pos = !(res_r || res_l);
+
+            ROS_INFO("SDI_L : %d, SDI_R : %d", res_l, res_r);
 
             // Reading SLS
             err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SLS_1, res_l);
@@ -545,7 +569,9 @@ namespace ezw
                           (int)err);
             }
 
-            msg.safe_limit_speed = res_r || res_l;
+            msg.safe_limit_speed = !(res_r || res_l);
+
+            ROS_INFO("SLS_L : %d, SLS_R : %d", res_l, res_r);
 
             ROS_INFO("STO: %d, SDI+: %d, SLS: %d", msg.safe_torque_off, msg.safe_direction_indication_pos, msg.safe_limit_speed);
 
