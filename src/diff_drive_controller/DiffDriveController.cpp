@@ -231,11 +231,23 @@ namespace ezw
             }
 
             if (pds_state_l != smccore::IService::PDSState::OPERATION_ENABLED) {
-                m_left_controller.enterInOperationEnabledState();
+                err_l = m_left_controller.enterInOperationEnabledState();
             }
 
             if (pds_state_r != smccore::IService::PDSState::OPERATION_ENABLED) {
-                m_right_controller.enterInOperationEnabledState();
+                err_r = m_right_controller.enterInOperationEnabledState();
+            }
+
+            if (ERROR_NONE != err_l) {
+                ROS_ERROR("Failed to enable left motor, EZW_ERR: SMCService : "
+                          "Controller::enterInOperationEnabledState() return error code : %d",
+                          (int)err_l);
+            }
+
+            if (ERROR_NONE != err_r) {
+                ROS_ERROR("Failed to enable right motor, EZW_ERR: SMCService : "
+                          "Controller::enterInOperationEnabledState() return error code : %d",
+                          (int)err_r);
             }
         }
 
