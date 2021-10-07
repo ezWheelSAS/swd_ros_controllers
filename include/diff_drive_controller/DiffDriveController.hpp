@@ -24,6 +24,7 @@
 #include <tf2_ros/transform_broadcaster.h>
 
 #define M_MAX(a, b) ((a) > (b) ? (a) : (b))
+#define M_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define M_SIGN(a) ((a) > 0 ? 1 : -1)
 
 namespace ezw

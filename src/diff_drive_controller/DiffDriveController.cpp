@@ -457,15 +457,17 @@ namespace ezw
             int32_t max_speed = M_MAX(std::abs(left_speed), std::abs(right_speed));
 
             if (max_speed > m_wheel_sls_rpm) {
+                double sls_to_max_ratio = static_cast<double>(m_wheel_sls_rpm) / static_cast<double>(max_speed);
+
                 if (std::abs(left_speed) > std::abs(right_speed)) {
                     // Scale right_speed speed
-                    right_speed = static_cast<int32_t>(static_cast<double>(right_speed) * (static_cast<double>(m_wheel_sls_rpm) / static_cast<double>(std::abs(left_speed))));
+                    right_speed = static_cast<int32_t>(static_cast<double>(right_speed) * sls_to_max_ratio);
 
                     // Limit the left_speed
                     left_speed = m_wheel_sls_rpm;
                 } else {
                     // Scale left_speed
-                    left_speed = static_cast<int32_t>(static_cast<double>(left_speed) * (static_cast<double>(m_wheel_sls_rpm) / static_cast<double>(std::abs(right_speed))));
+                    left_speed = static_cast<int32_t>(static_cast<double>(left_speed) * sls_to_max_ratio);
 
                     // Limit the right_speed
                     right_speed = m_wheel_sls_rpm;
