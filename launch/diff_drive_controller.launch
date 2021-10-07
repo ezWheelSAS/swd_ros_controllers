@@ -13,6 +13,7 @@
         <rosparam param="base_link">"base_link"</rosparam>
         <rosparam param="ref_wheel">"Left"</rosparam>
         <rosparam param="publish_safety_functions">true</rosparam>
+        <rosparam param="wheel_safe_limit_speed_rpm">75</rosparam>
         <rosparam param="publish_odom">true</rosparam>
         <rosparam param="publish_tf">true</rosparam>
     </node>
