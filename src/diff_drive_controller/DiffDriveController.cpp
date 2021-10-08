@@ -17,8 +17,6 @@
 #include <ros/duration.h>
 #include <ros/ros.h>
 
-#include <limits>
-
 #include <tf2/LinearMath/Quaternion.h>
 
 using namespace std::chrono_literals;
@@ -34,19 +32,20 @@ namespace ezw
             ROS_INFO("Initializing ezw-diff-drive-controller, node name : %s", ros::this_node::getName().c_str());
 
             // Read parameters
-            m_baseline_m                    = m_nh->param("baseline_m", 0.0);
-            m_pub_freq_hz                   = m_nh->param("pub_freq_hz", 50);
-            m_watchdog_receive_ms           = m_nh->param("watchdog_receive_ms", 1000);
-            m_base_link                     = m_nh->param("base_link", std::string("base_link"));
-            m_odom_frame                    = m_nh->param("odom_frame", std::string("odom"));
-            m_left_config_file              = m_nh->param("left_config_file", std::string(""));
-            m_right_config_file             = m_nh->param("right_config_file", std::string(""));
-            m_publish_odom                  = m_nh->param("publish_odom", true);
-            m_publish_tf                    = m_nh->param("publish_tf", true);
-            m_publish_safety                = m_nh->param("publish_safety_functions", true);
-            double      max_wheel_speed_rpm = m_nh->param("max_wheel_speed_rpm", 35); // 30 Wheel's rpm => Motor rpm (30 * 14 = 490)
-            std::string ref_wheel           = m_nh->param("ref_wheel", std::string("Right"));
-            std::string ctrl_mode           = m_nh->param("control_mode", std::string("Twist"));
+            m_baseline_m                        = m_nh->param("baseline_m", 0.0);
+            m_pub_freq_hz                       = m_nh->param("pub_freq_hz", 50);
+            m_watchdog_receive_ms               = m_nh->param("watchdog_receive_ms", 1000);
+            m_base_link                         = m_nh->param("base_link", std::string("base_link"));
+            m_odom_frame                        = m_nh->param("odom_frame", std::string("odom"));
+            m_left_config_file                  = m_nh->param("left_config_file", std::string(""));
+            m_right_config_file                 = m_nh->param("right_config_file", std::string(""));
+            m_publish_odom                      = m_nh->param("publish_odom", true);
+            m_publish_tf                        = m_nh->param("publish_tf", true);
+            m_publish_safety                    = m_nh->param("publish_safety_functions", true);
+            double      max_wheel_speed_rpm     = m_nh->param("wheel_max_speed_rpm", 75);        // 75 Wheel's rpm => Motor rpm (75 * 14 = 1050)
+            double      max_sls_wheel_speed_rpm = m_nh->param("wheel_safe_limit_speed_rpm", 30); // 30 Wheel's rpm => Motor rpm (30 * 14 = 490)
+            std::string ref_wheel               = m_nh->param("ref_wheel", std::string("Right"));
+            std::string ctrl_mode               = m_nh->param("control_mode", std::string("Twist"));
 
             if ("Left" == ref_wheel) {
                 m_ref_wheel = -1;
@@ -204,15 +203,12 @@ namespace ezw
                           (int)err);
             }
 
-            if (std::abs(m_l_motor_reduction - m_r_motor_reduction) > std::numeric_limits<double>::epsilon) {
-                ROS_WARN("Differents reduction factors for motors left (%f) and motor right (%f)");
-            }
-
             // Set m_max_motor_speed_rpm from wheel_sls and motor_reduction
             m_max_motor_speed_rpm = static_cast<int32_t>(max_wheel_speed_rpm * m_l_motor_reduction);
+            m_motor_sls_rpm = static_cast<int32_t>(max_sls_wheel_speed_rpm * m_l_motor_reduction);
 
-            ROS_INFO("Got parameter 'max_wheel_speed_rpm' = %f rpm -> Setting maximum motor speed to %d rpm",
-                     max_wheel_speed_rpm, m_max_motor_speed_rpm);
+            ROS_INFO("Got parameter 'wheel_max_speed_rpm' = %f rpm -> Setting maximum motor speed to %d rpm", max_wheel_speed_rpm, m_max_motor_speed_rpm);
+            ROS_INFO("Got parameter 'wheel_safe_limit_speed_rpm' = %f rpm -> Setting maximum motor safe limit speed to %d rpm", max_sls_wheel_speed_rpm, m_motor_sls_rpm);
 
             m_timer_watchdog = m_nh->createTimer(ros::Duration(m_watchdog_receive_ms / 1000.0), boost::bind(&DiffDriveController::cbWatchdog, this));
             m_timer_pds      = m_nh->createTimer(ros::Duration(1), boost::bind(&DiffDriveController::cbTimerStateMachine, this));
@@ -328,14 +324,14 @@ namespace ezw
             if (ERROR_NONE != err) {
                 ROS_ERROR("SoftBrake: Failed %s left wheel, EZW_ERR: %d", halt ? "braking" : "releasing", (int)err);
             } else {
-                ROS_INFO("SoftBrake: Left motor's soft brake %s", halt ? "activated" : "disabled", (int)err);
+                ROS_INFO("SoftBrake: Left motor's soft brake %s", halt ? "activated" : "disabled");
             }
 
             err = m_right_controller.setHalt(halt);
             if (ERROR_NONE != err) {
                 ROS_ERROR("SoftBrake: Failed %s right wheel, EZW_ERR: %d", halt ? "braking" : "releasing", (int)err);
             } else {
-                ROS_INFO("SoftBrake: Right motor's soft brake %s", halt ? "activated" : "disabled", (int)err);
+                ROS_INFO("SoftBrake: Right motor's soft brake %s", halt ? "activated" : "disabled");
             }
         }
 
@@ -476,22 +472,35 @@ namespace ezw
         void DiffDriveController::setSpeeds(int32_t left_speed, int32_t right_speed)
         {
             int32_t max_speed = M_MAX(std::abs(left_speed), std::abs(right_speed));
+            int32_t ref_speed = -1;
 
             if (max_speed > m_max_motor_speed_rpm) {
-                double sls_to_max_ratio = static_cast<double>(m_max_motor_speed_rpm) / static_cast<double>(max_speed);
+                ref_speed = m_max_motor_speed_rpm;
+            }
+
+            if ((left_speed < 0) && (right_speed < 0) && (max_speed > m_motor_sls_rpm)) {
+                ref_speed = m_motor_sls_rpm;
+            }
+
+            if (m_safety_msg.safe_limit_speed && (max_speed > m_motor_sls_rpm)) {
+                ref_speed = m_motor_sls_rpm;
+            }
+
+            if (-1 != ref_speed) {
+                double ref_to_max_ratio = static_cast<double>(ref_speed) / static_cast<double>(max_speed);
 
                 if (std::abs(left_speed) > std::abs(right_speed)) {
                     // Scale right_speed speed
-                    right_speed = static_cast<int32_t>(static_cast<double>(right_speed) * sls_to_max_ratio);
+                    right_speed = static_cast<int32_t>(static_cast<double>(right_speed) * ref_to_max_ratio);
 
                     // Limit the left_speed
-                    left_speed = M_SIGN(left_speed) * m_max_motor_speed_rpm;
+                    left_speed = M_SIGN(left_speed) * ref_speed;
                 } else {
                     // Scale left_speed
-                    left_speed = static_cast<int32_t>(static_cast<double>(left_speed) * sls_to_max_ratio);
+                    left_speed = static_cast<int32_t>(static_cast<double>(left_speed) * ref_to_max_ratio);
 
                     // Limit the right_speed
-                    right_speed = M_SIGN(right_speed) * m_max_motor_speed_rpm;
+                    right_speed = M_SIGN(right_speed) * ref_speed;
                 }
 
                 ROS_WARN("The target speed exceeds the maximum speed limit (%d rpm). "
@@ -561,8 +570,6 @@ namespace ezw
                     ROS_ERROR("Inconsistant STO for left and right motors, left=%d, right=%d.", res_l, res_r);
                 }
 
-                ROS_INFO("STO_L : %d, STO_R : %d", res_l, res_r);
-
                 // Reading SDI
                 ezw::smccore::Controller::SafetyFunctionId safety_fcn_l, safety_fcn_r;
 
@@ -592,8 +599,6 @@ namespace ezw
 
                 msg.safe_direction_indication_pos = !(res_r || res_l);
 
-                ROS_INFO("SDI_L : %d, SDI_R : %d", res_l, res_r);
-
                 // Reading SLS
                 err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SLS_1, res_l);
                 if (ERROR_NONE != err) {
@@ -611,9 +616,11 @@ namespace ezw
 
                 msg.safe_limit_speed = !(res_r || res_l);
 
-                ROS_INFO("SLS_L : %d, SLS_R : %d", res_l, res_r);
-
                 ROS_INFO("STO: %d, SDI+: %d, SLS: %d", msg.safe_torque_off, msg.safe_direction_indication_pos, msg.safe_limit_speed);
+
+                m_safety_msg_mtx.lock();
+                m_safety_msg = msg;
+                m_safety_msg_mtx.unlock();
 
                 m_pub_safety.publish(msg);
             } else {
