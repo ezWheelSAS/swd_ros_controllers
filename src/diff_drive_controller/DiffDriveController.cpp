@@ -379,8 +379,8 @@ namespace ezw
             msg_odom.child_frame_id  = m_base_link;
 
             msg_odom.twist                 = geometry_msgs::TwistWithCovariance();
-            msg_odom.twist.twist.linear.x  = d_dist_center / m_pub_freq_hz;
-            msg_odom.twist.twist.angular.z = d_theta / m_pub_freq_hz;
+            msg_odom.twist.twist.linear.x  = d_dist_center * m_pub_freq_hz;
+            msg_odom.twist.twist.angular.z = d_theta * m_pub_freq_hz;
 
             msg_odom.pose.pose.position.x = x_now;
             msg_odom.pose.pose.position.y = y_now;
