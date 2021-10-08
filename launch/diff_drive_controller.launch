@@ -7,14 +7,14 @@
         <rosparam param="pub_freq_hz">50</rosparam>
         <rosparam param="left_config_file">"/opt/ezw/usr/etc/ezw-smc-core/swd_left_config.ini"</rosparam>
         <rosparam param="right_config_file">"/opt/ezw/usr/etc/ezw-smc-core/swd_right_config.ini"</rosparam>
-        <rosparam param="watchdog_receive_ms">1000</rosparam>
+        <rosparam param="watchdog_receive_ms">500</rosparam>
         <rosparam param="control_mode">"Twist"</rosparam>
         <rosparam param="odom_frame">"odom"</rosparam>
         <rosparam param="base_link">"base_link"</rosparam>
         <rosparam param="ref_wheel">"Left"</rosparam>
         <rosparam param="publish_safety_functions">true</rosparam>
         <rosparam param="wheel_max_speed_rpm">95</rosparam>
-        <rosparam param="wheel_safe_limit_speed_rpm">40</rosparam>
+        <rosparam param="wheel_safety_limited_speed_rpm">40</rosparam>
         <rosparam param="publish_odom">true</rosparam>
         <rosparam param="publish_tf">true</rosparam>
     </node>
