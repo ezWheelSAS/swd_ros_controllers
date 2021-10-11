@@ -236,7 +236,6 @@ namespace ezw
             smccore::Controller::NMTState nmt_state_l, nmt_state_r;
             smccore::Controller::PDSState pds_state_l, pds_state_r;
             ezw_error_t                   err_l, err_r;
-            bool                          do_pds_enter_in_oper = true;
 
             nmt_state_l = nmt_state_r = smccore::Controller::NMTState::UNKNOWN;
             pds_state_l = pds_state_r = smccore::Controller::PDSState::SWITCH_ON_DISABLED;
@@ -257,13 +256,11 @@ namespace ezw
             }
 
             if (smccore::Controller::NMTState::OPER != nmt_state_l) {
-                err_l                = m_left_controller.setNMTState(smccore::Controller::NMTCommand::OPER);
-                do_pds_enter_in_oper = false;
+                err_l = m_left_controller.setNMTState(smccore::Controller::NMTCommand::OPER);
             }
 
             if (smccore::Controller::NMTState::OPER != nmt_state_r) {
-                err_r                = m_right_controller.setNMTState(smccore::Controller::NMTCommand::OPER);
-                do_pds_enter_in_oper = false;
+                err_r = m_right_controller.setNMTState(smccore::Controller::NMTCommand::OPER);
             }
 
             if (ERROR_NONE != err_l && smccore::Controller::NMTState::OPER != nmt_state_l) {
@@ -278,7 +275,10 @@ namespace ezw
                           (int)err_r);
             }
 
-            if (do_pds_enter_in_oper) {
+            m_nmt_ok = (smccore::Controller::NMTState::OPER == nmt_state_l) && (smccore::Controller::NMTState::OPER == nmt_state_r);
+
+            // If NMT is operational, check the PDS state
+            if (m_nmt_ok) {
                 // PDS state machine
                 err_l = m_left_controller.getPDSState(pds_state_l);
                 err_r = m_right_controller.getPDSState(pds_state_r);
@@ -316,7 +316,6 @@ namespace ezw
                 }
             }
 
-            m_nmt_ok = (smccore::Controller::NMTState::OPER == nmt_state_l) && (smccore::Controller::NMTState::OPER == nmt_state_r);
             m_pds_ok = (smccore::Controller::PDSState::OPERATION_ENABLED == pds_state_l) && (smccore::Controller::PDSState::OPERATION_ENABLED == pds_state_r);
         }
 
