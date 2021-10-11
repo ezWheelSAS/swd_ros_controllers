@@ -52,7 +52,7 @@ namespace ezw
                 m_left_wheel_polarity = -1;
             } else {
                 m_left_wheel_polarity = 1;
-                if ("Right" != ctrl_mode) {
+                if ("Right" != ref_wheel) {
                     ROS_WARN("Invalid value '%s' for parameter 'ref_wheel', accepted values: ['Right' (default) or 'Left']."
                              "Falling back to default (Right).",
                              ref_wheel.c_str());
