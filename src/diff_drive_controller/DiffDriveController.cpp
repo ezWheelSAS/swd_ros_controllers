@@ -24,6 +24,19 @@ using namespace std::chrono_literals;
 #define USE_SAFETY_CONTROL_WORD 0
 #define VERBOSE_OUTPUT          0
 
+// Default values for parameters
+#define DEFAULT_ODOM_FRAME          std::string("odom")
+#define DEFAULT_BASE_FRAME          std::string("base_link")
+#define DEFAULT_REF_WHEEL           std::string("Right")
+#define DEFAULT_CTRL_MODE           std::string("Twist")
+#define DEFAULT_MAX_WHEEL_SPEED_RPM 75.0 // 75 rpm Wheel => Motor (75 * 14 = 1050 rpm)
+#define DEFAULT_MAX_SLS_WHEEL_RPM   30.0 // 30 rpm Wheel => Motor (30 * 14 = 490 rpm)
+#define DEFAULT_PUB_FREQ_HZ         50
+#define DEFAULT_WATCHDOG_MS         1000
+#define DEFAULT_PUBLISH_ODOM        true
+#define DEFAULT_PUBLISH_TF          true
+#define DEFAULT_PUBLISH_SAFETY_FCNS true
+
 namespace ezw
 {
     namespace diffdrivecontroller
@@ -34,39 +47,41 @@ namespace ezw
 
             // Read parameters
             m_baseline_m                        = m_nh->param("baseline_m", 0.0);
-            m_pub_freq_hz                       = m_nh->param("pub_freq_hz", 50);
-            m_watchdog_receive_ms               = m_nh->param("watchdog_receive_ms", 1000);
-            m_base_frame                        = m_nh->param("base_frame", std::string("base_link"));
-            m_odom_frame                        = m_nh->param("odom_frame", std::string("odom"));
             m_left_config_file                  = m_nh->param("left_config_file", std::string(""));
             m_right_config_file                 = m_nh->param("right_config_file", std::string(""));
-            m_publish_odom                      = m_nh->param("publish_odom", true);
-            m_publish_tf                        = m_nh->param("publish_tf", true);
-            m_publish_safety                    = m_nh->param("publish_safety_functions", true);
-            double      max_wheel_speed_rpm     = m_nh->param("wheel_max_speed_rpm", 75);            // 75 Wheel's rpm => Motor rpm (75 * 14 = 1050)
-            double      max_sls_wheel_speed_rpm = m_nh->param("wheel_safety_limited_speed_rpm", 30); // 30 Wheel's rpm => Motor rpm (30 * 14 = 490)
-            std::string ref_wheel               = m_nh->param("ref_wheel", std::string("Right"));
-            std::string ctrl_mode               = m_nh->param("control_mode", std::string("Twist"));
+            m_pub_freq_hz                       = m_nh->param("pub_freq_hz", DEFAULT_PUB_FREQ_HZ);
+            m_watchdog_receive_ms               = m_nh->param("watchdog_receive_ms", DEFAULT_WATCHDOG_MS);
+            m_base_frame                        = m_nh->param("base_frame", DEFAULT_BASE_FRAME);
+            m_odom_frame                        = m_nh->param("odom_frame", DEFAULT_ODOM_FRAME);
+            m_publish_odom                      = m_nh->param("publish_odom", DEFAULT_PUBLISH_ODOM);
+            m_publish_tf                        = m_nh->param("publish_tf", DEFAULT_PUBLISH_TF);
+            m_publish_safety                    = m_nh->param("publish_safety_functions", DEFAULT_PUBLISH_SAFETY_FCNS);
+            double      max_wheel_speed_rpm     = m_nh->param("wheel_max_speed_rpm", DEFAULT_MAX_WHEEL_SPEED_RPM);
+            double      max_sls_wheel_speed_rpm = m_nh->param("wheel_safety_limited_speed_rpm", DEFAULT_MAX_SLS_WHEEL_RPM);
+            std::string ref_wheel               = m_nh->param("ref_wheel", DEFAULT_REF_WHEEL);
+            std::string ctrl_mode               = m_nh->param("control_mode", DEFAULT_CTRL_MODE);
 
             if ("Left" == ref_wheel) {
                 m_left_wheel_polarity = -1;
             } else {
                 m_left_wheel_polarity = 1;
                 if ("Right" != ref_wheel) {
-                    ROS_WARN("Invalid value '%s' for parameter 'ref_wheel', accepted values: ['Right' (default) or 'Left']."
-                             "Falling back to default (Right).",
-                             ref_wheel.c_str());
+                    ROS_WARN("Invalid value '%s' for parameter 'ref_wheel', accepted values: ['Right' or 'Left']."
+                             "Falling back to default (%s).",
+                             ref_wheel.c_str(), DEFAULT_REF_WHEEL.c_str());
                 }
             }
 
-            if (m_pub_freq_hz <= 0) {
-                ROS_WARN("pub_freq_hz parameter is mandatory and must be > 0."
-                         "Falling back to default (50Hz).");
+            if (m_baseline_m <= 0) {
+                ROS_ERROR("baseline_m parameter is mandatory and must be greater than 0");
+                throw std::runtime_error("baseline_m parameter is mandatory and must be > 0");
             }
 
-            if (m_baseline_m <= 0) {
-                ROS_ERROR("baseline_m parameter is mandatory and must be > 0");
-                throw std::runtime_error("baseline_m parameter is mandatory and must be > 0");
+            if (m_pub_freq_hz <= 0) {
+                m_pub_freq_hz = DEFAULT_PUB_FREQ_HZ;
+                ROS_WARN("Invalid value %d for parameter 'pub_freq_hz', it must be greater than 0."
+                         "Falling back to default (%d Hz).",
+                         m_pub_preq_hz, DEFAULT_PUB_FREQ_HZ);
             }
 
             // Publishers
@@ -86,10 +101,24 @@ namespace ezw
             } else {
                 m_sub_command = m_nh->subscribe("cmd_vel", 5, &DiffDriveController::cbCmdVel, this);
                 if ("Twist" != ctrl_mode) {
-                    ROS_WARN("Invalid value '%s' for parameter 'control_mode', accepted values: ['Twist' (default) or 'LeftRightSpeeds']."
-                             "Falling back to default (Twist).",
-                             ctrl_mode.c_str());
+                    ROS_WARN("Invalid value '%s' for parameter 'control_mode', accepted values: ['Twist' or 'LeftRightSpeeds']."
+                             "Falling back to default (%s).",
+                             ctrl_mode.c_str(), DEFAULT_CTRL_MODE.c_str());
                 }
+            }
+
+            if (max_wheel_speed_rpm < 0.) {
+                max_wheel_speed_rpm = DEFAULT_MAX_WHEEL_SPEED_RPM;
+                ROS_ERROR("Invalid value %f for parameter 'wheel_max_speed_rpm', it should be a positive value. "
+                          "Falling back to default (%f)",
+                          max_wheel_speed_rpm, DEFAULT_MAX_WHEEL_SPEED_RPM);
+            }
+
+            if (max_sls_wheel_speed_rpm < 0.) {
+                max_sls_wheel_speed_rpm = DEFAULT_MAX_SLS_WHEEL_RPM;
+                ROS_ERROR("Invalid value %f for parameter 'wheel_safety_limited_speed_rpm', it should be a positive value. "
+                          "Falling back to default (%f)",
+                          max_sls_wheel_speed_rpm, DEFAULT_MAX_SLS_WHEEL_RPM);
             }
 
             // Initialize motors
