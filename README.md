@@ -30,7 +30,7 @@ This controller drives two ez-Wheel SWD® wheels as a differential-drive robot.
 - `baseline_m` of type **`double`**: The distance (in meters) between the 2 wheels (mandatory parameter).
 - `pub_freq_hz` of type **`int`**: Frequency (in Hz) of published odometry and TFs (default `50`).
 - `watchdog_receive_ms` of type **`int`**: The delay (in milliseconds) before stopping the wheels if no command is received (default `1000`).
-- `m_base_link` of type **`string`**: Frame ID for the moving platform, used in odometry and TFs (default `'base_link'`) (see [REP-150](https://www.ros.org/reps/rep-0105.html) for more info).
+- `base_frame` of type **`string`**: Frame ID for the moving platform, used in odometry and TFs (default `'base_link'`) (see [REP-150](https://www.ros.org/reps/rep-0105.html) for more info).
 - `odom_frame` of type **`string`**: Frame ID for the `odom` fixed frame used in odometry and TFs (default `'odom'`) (see [REP-150](https://www.ros.org/reps/rep-0105.html) for more info).
 - `publish_odom` of type **`bool`**: Publish odometry messages (default `true`).
 - `publish_tf` of type **`bool`**: Publish odometry TF (default `true`).

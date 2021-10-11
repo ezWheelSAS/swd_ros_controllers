@@ -36,7 +36,7 @@ namespace ezw
             m_baseline_m                        = m_nh->param("baseline_m", 0.0);
             m_pub_freq_hz                       = m_nh->param("pub_freq_hz", 50);
             m_watchdog_receive_ms               = m_nh->param("watchdog_receive_ms", 1000);
-            m_base_link                         = m_nh->param("base_link", std::string("base_link"));
+            m_base_frame                        = m_nh->param("base_frame", std::string("base_link"));
             m_odom_frame                        = m_nh->param("odom_frame", std::string("odom"));
             m_left_config_file                  = m_nh->param("left_config_file", std::string(""));
             m_right_config_file                 = m_nh->param("right_config_file", std::string(""));
@@ -381,7 +381,7 @@ namespace ezw
 
             msg_odom.header.stamp    = timestamp;
             msg_odom.header.frame_id = m_odom_frame;
-            msg_odom.child_frame_id  = m_base_link;
+            msg_odom.child_frame_id  = m_base_frame;
 
             msg_odom.twist                 = geometry_msgs::TwistWithCovariance();
             msg_odom.twist.twist.linear.x  = d_dist_center * m_pub_freq_hz;
@@ -406,7 +406,7 @@ namespace ezw
                 geometry_msgs::TransformStamped tf_odom_baselink;
                 tf_odom_baselink.header.stamp    = timestamp;
                 tf_odom_baselink.header.frame_id = m_odom_frame;
-                tf_odom_baselink.child_frame_id  = m_base_link;
+                tf_odom_baselink.child_frame_id  = m_base_frame;
 
                 tf_odom_baselink.transform.translation.x = msg_odom.pose.pose.position.x;
                 tf_odom_baselink.transform.translation.y = msg_odom.pose.pose.position.y;
