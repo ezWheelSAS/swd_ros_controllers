@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2020 EZ-Wheel S.A.S.
+ * Copyright (C) 2021 ez-Wheel S.A.S.
  *
  * @file DiffDriveController.hpp
  */
@@ -24,9 +24,10 @@
 
 #include <tf2_ros/transform_broadcaster.h>
 
-#define M_MAX(a, b) ((a) > (b) ? (a) : (b))
-#define M_MIN(a, b) ((a) < (b) ? (a) : (b))
-#define M_SIGN(a)   ((a) > 0 ? 1 : -1)
+#define M_MAX(a, b)      ((a) > (b) ? (a) : (b))
+#define M_MIN(a, b)      ((a) < (b) ? (a) : (b))
+#define M_SIGN(a)        ((a) > 0 ? 1 : -1)
+#define M_BOUND_ANGLE(a) (((a) > M_PI) ? ((a)-2. * M_PI) : (((a) < -M_PI) ? ((a) + 2. * M_PI) : (a)))
 
 namespace ezw
 {

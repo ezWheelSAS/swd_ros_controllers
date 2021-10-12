@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2020 EZ-Wheel S.A.S.
+ * Copyright (C) 2021 ez-Wheel S.A.S.
  *
  * @file main.cpp
  */
