@@ -39,18 +39,18 @@ using namespace std::chrono_literals;
 
 namespace ezw
 {
-    namespace diffdrivecontroller
+    namespace swd
     {
         DiffDriveController::DiffDriveController(const std::shared_ptr<ros::NodeHandle> nh) : m_nh(nh)
         {
-            ROS_INFO("Initializing ezw-diff-drive-controller, node name : %s", ros::this_node::getName().c_str());
+            ROS_INFO("Initializing swd_diff_drive_controller, node name : %s", ros::this_node::getName().c_str());
 
             // Read parameters
             m_baseline_m                        = m_nh->param("baseline_m", 0.0);
-            m_left_config_file                  = m_nh->param("left_config_file", std::string(""));
-            m_right_config_file                 = m_nh->param("right_config_file", std::string(""));
+            m_left_config_file                  = m_nh->param("left_swd_config_file", std::string(""));
+            m_right_config_file                 = m_nh->param("right_swd_config_file", std::string(""));
             m_pub_freq_hz                       = m_nh->param("pub_freq_hz", DEFAULT_PUB_FREQ_HZ);
-            m_watchdog_receive_ms               = m_nh->param("watchdog_receive_ms", DEFAULT_WATCHDOG_MS);
+            m_watchdog_receive_ms               = m_nh->param("control_timeout_ms", DEFAULT_WATCHDOG_MS);
             m_base_frame                        = m_nh->param("base_frame", DEFAULT_BASE_FRAME);
             m_odom_frame                        = m_nh->param("odom_frame", DEFAULT_ODOM_FRAME);
             m_publish_odom                      = m_nh->param("publish_odom", DEFAULT_PUBLISH_ODOM);
@@ -168,8 +168,8 @@ namespace ezw
                     throw std::runtime_error("Failed initializing right motor");
                 }
             } else {
-                ROS_ERROR("Please specify the right_config_file parameter");
-                throw std::runtime_error("Please specify the right_config_file parameter");
+                ROS_ERROR("Please specify the 'right_swd_config_file' parameter");
+                throw std::runtime_error("Please specify the 'right_swd_config_file' parameter");
             }
 
             if ("" != m_left_config_file) {
@@ -214,8 +214,8 @@ namespace ezw
                     throw std::runtime_error("Failed initializing left motor");
                 }
             } else {
-                ROS_ERROR("Please specify the left_config_file parameter");
-                throw std::runtime_error("Please specify the left_config_file parameter");
+                ROS_ERROR("Please specify the 'left_swd_config_file' parameter");
+                throw std::runtime_error("Please specify the 'left_swd_config_file' parameter");
             }
 
             // Read initial encoders values
@@ -256,7 +256,7 @@ namespace ezw
                 m_timer_safety = m_nh->createTimer(ros::Duration(1.0 / 5.0), boost::bind(&DiffDriveController::cbTimerSafety, this));
             }
 
-            ROS_INFO("ez-Wheel's diff_drive_controller initialized successfully!");
+            ROS_INFO("ez-Wheel's swd_diff_drive_controller initialized successfully!");
         }
 
         void DiffDriveController::cbTimerStateMachine()
@@ -695,5 +695,5 @@ namespace ezw
         {
             setSpeeds(0, 0);
         }
-    } // namespace diffdrivecontroller
+    } // namespace swd
 } // namespace ezw

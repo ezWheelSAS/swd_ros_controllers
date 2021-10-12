@@ -1,4 +1,4 @@
-# EZW ROS Controllers
+# ez-Wheel SWD ROS Controllers
 
 This package has been tested on ROS Melodic and Noetic, it contains ROS nodes to control motors powered by the [ez-Wheel](https://www.ez-wheel.com) Safety Wheel Drive (SWD®) technology ([SWD® Core](https://www.ez-wheel.com/en/safety-gear-motor) or [SWD® 150](https://www.ez-wheel.com/en/swd-150-safety-wheel-drive)).
 
@@ -7,29 +7,29 @@ This package has been tested on ROS Melodic and Noetic, it contains ROS nodes to
 The package comes with a preconfigured `.launch` file for the [SWD® Starter Kit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr):
 
 ```shell
-roslaunch ezw_ros_controllers diff_drive_controller.launch
+roslaunch swd_ros_controllers swd_diff_drive_controller.launch
 ```
 
 Or you can run it with a custom configuration, the minimum required parameters are:
 
 ```shell
-rosrun ezw_ros_controllers diff_drive_controller \
-                           _left_config_file:="/path/to/swd_left.ini" \
-                           _right_config_file:="/path/to/swd_right.ini" \
+rosrun swd_ros_controllers swd_diff_drive_controller \
+                           _left_swd_config_file:="/path/to/swd_left.ini" \
+                           _right_swd_config_file:="/path/to/swd_right.ini" \
                            _baseline:=0.485
 ```
 
-## The `diff_drive_controller` node
+## The `swd_diff_drive_controller` node
 
 This controller drives two ez-Wheel SWD® wheels as a differential-drive robot.
 
 ### Node parameters
 
-- `left_config_file` of type **`string`**: Path to the `.ini` configuration file of the left motor (mandatory parameter).
-- `right_config_file` of type **`string`**: Path to the `.ini` configuration file of the right motor (mandatory parameter).
+- `left_swd_config_file` of type **`string`**: Path to the `.ini` configuration file of the left motor (mandatory parameter).
+- `right_swd_config_file` of type **`string`**: Path to the `.ini` configuration file of the right motor (mandatory parameter).
 - `baseline_m` of type **`double`**: The distance (in meters) between the 2 wheels (mandatory parameter).
 - `pub_freq_hz` of type **`int`**: Frequency (in Hz) of published odometry and TFs (default `50`).
-- `watchdog_receive_ms` of type **`int`**: The delay (in milliseconds) before stopping the wheels if no command is received (default `1000`).
+- `command_timeout_ms` of type **`int`**: The delay (in milliseconds) before stopping the wheels if no command is received (default `1000`).
 - `base_frame` of type **`string`**: Frame ID for the moving platform, used in odometry and TFs (default `'base_link'`) (see [REP-150](https://www.ros.org/reps/rep-0105.html) for more info).
 - `odom_frame` of type **`string`**: Frame ID for the `odom` fixed frame used in odometry and TFs (default `'odom'`) (see [REP-150](https://www.ros.org/reps/rep-0105.html) for more info).
 - `publish_odom` of type **`bool`**: Publish odometry messages (default `true`).

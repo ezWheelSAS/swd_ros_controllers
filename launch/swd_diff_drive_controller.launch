@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <launch>
 
-    <node pkg="ezw_ros_controllers" name="diff_drive_controller" type="diff_drive_controller"
+    <node pkg="swd_ros_controllers" name="swd_diff_drive_controller" type="swd_diff_drive_controller"
         output="screen">
         <rosparam param="baseline_m">0.485</rosparam>
         <rosparam param="pub_freq_hz">50</rosparam>
-        <rosparam param="left_config_file">"/opt/ezw/usr/etc/ezw-smc-core/swd_left_config.ini"</rosparam>
-        <rosparam param="right_config_file">"/opt/ezw/usr/etc/ezw-smc-core/swd_right_config.ini"</rosparam>
-        <rosparam param="watchdog_receive_ms">500</rosparam>
+        <rosparam param="left_swd_config_file">"/opt/ezw/usr/etc/ezw-smc-core/swd_left_config.ini"</rosparam>
+        <rosparam param="right_swd_config_file">"/opt/ezw/usr/etc/ezw-smc-core/swd_right_config.ini"</rosparam>
+        <rosparam param="command_timeout_ms">500</rosparam>
         <rosparam param="control_mode">"Twist"</rosparam>
         <rosparam param="base_frame">"base_link"</rosparam>
         <rosparam param="odom_frame">"odom"</rosparam>

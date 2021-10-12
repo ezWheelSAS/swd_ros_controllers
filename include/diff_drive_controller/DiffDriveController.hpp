@@ -11,7 +11,7 @@
 #include "ezw-smc-core/Config.hpp"
 #include "ezw-smc-core/Controller.hpp"
 
-#include <ezw_ros_controllers/SafetyFunctions.h>
+#include <swd_ros_controllers/SafetyFunctions.h>
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Twist.h>
@@ -30,7 +30,7 @@
 
 namespace ezw
 {
-    namespace diffdrivecontroller
+    namespace swd
     {
         /**
          * @brief Differential Drive Controller for ez-Wheel Gen2 wheels
@@ -84,7 +84,7 @@ namespace ezw
                 return (a > M_PI) ? a - 2. * M_PI : ((a < -M_PI) ? a + 2. * M_PI : a);
             }
         };
-    } // namespace diffdrivecontroller
+    } // namespace swd
 } // namespace ezw
 
 #endif /* EZW_ROSCONTROLLERS_DIFFDRIVECONTROLLER_HPP */

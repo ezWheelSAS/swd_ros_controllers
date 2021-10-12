@@ -1,14 +1,14 @@
 #
-#                     Copyright (C) 2019 EZ-Wheel S.A.S.
+#                     Copyright (C) 2021 ez-Wheel S.A.S.
 #
 # -----------------------------------------------------------------------------
 
 # CMake version required ----------------------------------
 cmake_minimum_required(VERSION 3.0)
-project(ezw_ros_controllers)
+project(swd_ros_controllers)
 
 if(NOT DEFINED PRJ_VERSION)
-  set(PRJ_VERSION "1.1.0")
+  set(PRJ_VERSION "1.2.0")
 endif(NOT DEFINED PRJ_VERSION)
 
 
@@ -66,7 +66,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_PROJECT_NAME ${PROJECT_NAME})
 set(CMAKE_SYSTEM_NAME Linux)
 
-set(CMAKE_PROJECT_BRIEF "EZW Wheel-sMC ROS package")
+set(CMAKE_PROJECT_BRIEF "ez-Wheel SWD ROS Controllers package")
 
 # if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 #     set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/image CACHE PATH "" FORCE)
@@ -167,8 +167,8 @@ find_package(
 # Project configuration
 #------------------------------------------------------------------------------
 
- include_directories(include)
- include_directories(/opt/ezw/usr/include/dbus-1.0)
+include_directories(include)
+include_directories(/opt/ezw/usr/include/dbus-1.0)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
@@ -358,8 +358,8 @@ file(GLOB_RECURSE SOURCES src/*.cpp)
 # add_executable(drive_controller ${SOURCES_DRIVE_CTRL} ${COMMON_SOURCES} ${HEADERS})
 # add_dependencies(drive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(diff_drive_controller ${SOURCES_DIFF_CRTL} ${COMMON_SOURCES} ${HEADERS})
-add_dependencies(diff_drive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(swd_diff_drive_controller ${SOURCES_DIFF_CRTL} ${COMMON_SOURCES} ${HEADERS})
+add_dependencies(swd_diff_drive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 # Specify libraries to link a library or executable target against
 # target_link_libraries(
@@ -371,7 +371,7 @@ add_dependencies(diff_drive_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${cat
 
 # Specify libraries to link a library or executable target against
 target_link_libraries(
-  diff_drive_controller
+  swd_diff_drive_controller
   ${EZW_LOG_LIBRARIES}
   ${EZW_SMC_CORE_LIBRARIES}
   ${catkin_LIBRARIES}
@@ -411,7 +411,7 @@ add_custom_target(other_files SOURCES ${OTHER_FILES})
 # )
 
 install(
-  TARGETS diff_drive_controller
+  TARGETS swd_diff_drive_controller
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -420,6 +420,6 @@ install(
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 install(
   FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/launch/diff_drive_controller.launch
+  ${CMAKE_CURRENT_SOURCE_DIR}/launch/swd_diff_drive_controller.launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )

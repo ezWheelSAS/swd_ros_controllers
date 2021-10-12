@@ -6,9 +6,9 @@
 
 #include <diff_drive_controller/DiffDriveController.hpp>
 
+#include <cstdlib>
 #include <ros/console.h>
 #include <ros/ros.h>
-#include <cstdlib>
 
 using namespace std::chrono_literals;
 
@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     // controlling computer. So this node will be launched before ROS Master. This is why
     // we wait for ros master here before starting the node.
     while (!ros::master::check()) {
-        ROS_ERROR("Wait for master at %s", ros::master::getURI().c_str());
+        ROS_ERROR("Waiting for ROS master at %s", ros::master::getURI().c_str());
         std::this_thread::sleep_for(1s);
     }
 
@@ -30,11 +30,10 @@ int main(int argc, char **argv)
 
     auto nh = std::make_shared<ros::NodeHandle>("~");
     try {
-        ezw::diffdrivecontroller::DiffDriveController diffDriveController(nh);
+        ezw::swd::DiffDriveController diffDriveController(nh);
         ros::spin();
-    } catch (std::runtime_error& err) {
+    } catch (std::runtime_error &err) {
         ROS_ERROR("FATAL ERROR, exception '%s'", err.what());
         std::exit(EXIT_FAILURE);
     }
-
 }
