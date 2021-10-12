@@ -1,6 +1,61 @@
-# ez-Wheel SWD ROS Controllers
+# ez-Wheel SWD® ROS Controllers
+## Contents
+* [Overview](#Overview)
+* [Installation](#Installation)
+  * Compiling environment setup
+* [Usage](#Usage)
+* [The `swd_diff_drive_controller` node](#swd_diff_drive_controller)
+    * Node parameters
+    * Subscribed Topics
+    * Published Topics
+* [Custom message types](#Custom-message-types)
+    * The `SafetyFunctions` message
+* [Support](#Support)
+* [About](#About)
 
-This package has been tested on ROS Melodic and Noetic, it contains ROS nodes to control motors powered by the [ez-Wheel](https://www.ez-wheel.com) Safety Wheel Drive (SWD®) technology ([SWD® Core](https://www.ez-wheel.com/en/safety-gear-motor) or [SWD® 150](https://www.ez-wheel.com/en/swd-150-safety-wheel-drive)).
+****
+## Overview
+This package has been tested on ROS Melodic and Noetic, it contains ROS nodes to control motors powered by the [ez-Wheel](https://www.ez-wheel.com) Safety Wheel Drive (SWD®) technology.
+
+<img src="https://www.ez-wheel.com/storage/image-product/visuels-swd-core-2-0-0.png" width="45%"></img> | <img src="https://www.ez-wheel.com/storage/image-product/roue-electrique-swd-150-2-0-0-0.png" width="45%"></img> | <img src="https://www.ez-wheel.com/storage/image-product/starterkit-ez-wheel-web-0-0-0.png" width="45%"></img> |
+|------------|-------------|-------------|
+| [SWD® Core](https://www.ez-wheel.com/en/safety-gear-motor) <br />Safety gear motor | [SWD® 150](https://www.ez-wheel.com/en/swd-150-safety-wheel-drive) <br />Safety wheel drive | [SWD® StarterKit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr) <br />Development kit for AGV and AMR|
+
+## Installation
+Prerequisites:
+- Two SWD® equipments
+- A ROS Machine
+- Software SWD® services packages
+
+### From packages
+To use the package, you can install prebuilt packages (Ubuntu 20.04 is recommended) with
+
+```shell
+sudo apt install swd-ros-controllers
+```
+
+### From source
+
+To compile the package, you have to install prebuilt packages (Ubuntu 20.04 is recommended) with
+
+```shell
+sudo apt install swd-services
+```
+
+In the following instructions, replace <rosdistro> with the name of your ROS distro (e.g., noetic).
+
+```shell
+source /opt/ros/$ROS_DISTRO/setup.bash
+mkdir -p ~/ros_ws/src/
+cd ~/ros_ws/src/
+git clone https://github.com/ezWheelSAS/swd_ros_controllers.git
+cd ..
+catkin_make install
+source ~/ros_ws/install/setup.bash
+```
+
+### From cross-compilation
+TODO
 
 ## Usage
 
@@ -23,7 +78,7 @@ rosrun swd_ros_controllers swd_diff_drive_controller \
 
 This controller drives two ez-Wheel SWD® wheels as a differential-drive robot.
 
-### Node parameters
+### Parameters
 
 - `left_swd_config_file` of type **`string`**: Path to the `.ini` configuration file of the left motor (mandatory parameter).
 - `right_swd_config_file` of type **`string`**: Path to the `.ini` configuration file of the right motor (mandatory parameter).
@@ -49,11 +104,9 @@ This controller drives two ez-Wheel SWD® wheels as a differential-drive robot.
 ### Published Topics
 
 - `~odom` of type **`nav_msgs::Odometry`**: Pose an velocity of the robot, based on wheels encoders. Associated TFs are also published, unless disabled in parameters.
-- `~safety` of type **`ezw_ros_controllers::SafetyFunctions`**: Safety messages communicated by the wheels via CANOpen, the message includes information about Safe Torque Off (STO), Safety Limited Speed (SLS), Safe Direction Indication (forward/backward) (SDI+/-), and Safe Brake Control (SBC) _(currently SDI(neg) and SBC are not published)_.
+- `~safety` of type **`swd_ros_controllers::SafetyFunctions`**: Safety messages communicated by the wheels via CANOpen, the message includes information about Safe Torque Off (STO), Safety Limited Speed (SLS), Safe Direction Indication (forward/backward) (SDI+/-), and Safe Brake Control (SBC) _(currently SDI(neg) and SBC are not published)_.
 
-## Custom message types
-
-### The `SafetyFunctions` message
+### The `swd_ros_controllers::SafetyFunctions` message
 
 This message encodes the safety functions read from the SWD via CANOpen.
 
@@ -66,4 +119,12 @@ bool safe_direction_indication_pos
 bool safe_direction_indication_neg (Reserved for future use)
 ```
 
-**[ez-Wheel](https://www.ez-wheel.com) © 2021**
+## Support
+In case of technical support, open a new issue.
+
+## About
+Innovative company founded in 2009 and located in Angoulême (France), the ez-Wheel company has developed the first industrial drive wheel integrating electric traction motor and rechargeable batteries.
+
+This revolutionary solution, which quickly turns any rolling material into an electrically assisted handling tool, has been adopted by hundreds of end-users to improve productivity and prevent from work accidents especially in the fields of Automotive, Factory logistics, Warehouses, Food processing, Hospitals and Pharmaceutics.
+
+The [ez-Wheel](https://www.ez-wheel.com) company has developed a unique know-how in embedded electronics, including safety critical systems, applied to battery powered electric traction.
