@@ -69,7 +69,7 @@ namespace ezw
             ezw::smccore::Controller m_left_controller, m_right_controller;
 
             std::mutex                           m_safety_msg_mtx;
-            ezw_ros_controllers::SafetyFunctions m_safety_msg;
+            swd_ros_controllers::SafetyFunctions m_safety_msg;
 
             double  m_x_prev = 0.0, m_y_prev = 0.0, m_theta_prev = 0.0;
             int32_t m_dist_left_prev_mm = 0, m_dist_right_prev_mm = 0;

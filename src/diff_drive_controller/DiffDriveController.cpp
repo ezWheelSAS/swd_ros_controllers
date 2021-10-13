@@ -81,7 +81,7 @@ namespace ezw
                 m_pub_freq_hz = DEFAULT_PUB_FREQ_HZ;
                 ROS_WARN("Invalid value %d for parameter 'pub_freq_hz', it must be greater than 0."
                          "Falling back to default (%d Hz).",
-                         m_pub_preq_hz, DEFAULT_PUB_FREQ_HZ);
+                         m_pub_freq_hz, DEFAULT_PUB_FREQ_HZ);
             }
 
             // Publishers
@@ -90,7 +90,7 @@ namespace ezw
             }
 
             if (m_publish_safety) {
-                m_pub_safety = m_nh->advertise<ezw_ros_controllers::SafetyFunctions>("safety", 5);
+                m_pub_safety = m_nh->advertise<swd_ros_controllers::SafetyFunctions>("safety", 5);
             }
 
             // Subscribers
@@ -583,7 +583,7 @@ namespace ezw
 
         void DiffDriveController::cbTimerSafety()
         {
-            ezw_ros_controllers::SafetyFunctions msg;
+            swd_ros_controllers::SafetyFunctions msg;
             ezw_error_t                          err;
             bool                                 res_l, res_r;
 
