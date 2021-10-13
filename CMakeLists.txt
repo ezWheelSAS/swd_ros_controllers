@@ -72,7 +72,7 @@ set(CMAKE_PROJECT_BRIEF "ez-Wheel SWD ROS Controllers package")
 #     set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/image CACHE PATH "" FORCE)
 # endif (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
-set(PKG_CONFIG_PATH ${CMAKE_SOURCE_DIR}/../image/lib/pkgconfig CACHE PATH "")
+set(PKG_CONFIG_PATH /opt/ezw/usr/lib/pkgconfig CACHE PATH "")
 set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${PKG_CONFIG_PATH}")
 message(STATUS "Pkgconfig extra path are: $ENV{PKG_CONFIG_PATH} ")
 
