@@ -1,61 +1,38 @@
 # ez-Wheel SWD® ROS Controllers
-## Contents
-* [Overview](#Overview)
-* [Installation](#Installation)
-  * Compiling environment setup
-* [Usage](#Usage)
-* [The `swd_diff_drive_controller` node](#swd_diff_drive_controller)
-    * Node parameters
-    * Subscribed Topics
-    * Published Topics
-* [Custom message types](#Custom-message-types)
-    * The `wd_ros_controllers::SafetyFunctions` message
-* [Support](#Support)
-* [About](#About)
 
-****
 ## Overview
 This package has been tested on ROS Melodic and Noetic, it contains ROS nodes to control motors powered by the [ez-Wheel](https://www.ez-wheel.com) Safety Wheel Drive (SWD®) technology.
 
 <img src="https://www.ez-wheel.com/storage/image-product/visuels-swd-core-2-0-0.png" width="45%"></img> | <img src="https://www.ez-wheel.com/storage/image-product/roue-electrique-swd-150-2-0-0-0.png" width="45%"></img> | <img src="https://www.ez-wheel.com/storage/image-product/starterkit-ez-wheel-web-0-0-0.png" width="45%"></img> |
 |------------|-------------|-------------|
-| [SWD® Core](https://www.ez-wheel.com/en/safety-gear-motor) <br />Safety gear motor | [SWD® 150](https://www.ez-wheel.com/en/swd-150-safety-wheel-drive) <br />Safety wheel drive | [SWD® StarterKit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr) <br />Development kit for AGV and AMR|
+| [SWD® Core](https://www.ez-wheel.com/en/safety-gear-motor) <br />Safety gear motor | [SWD® 150](https://www.ez-wheel.com/en/swd-150-safety-wheel-drive) <br />Safety wheel drive | [SWD® StarterKit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr) <br />Development kit for AGV and AMR |
+
+## Prerequisites
+- Two SWD® equipments
+- An Ubuntu 20.04 ROS Machine
+- `swd-services (>= 0.1.0)` installed
+
+## Ubuntu repositories configuration
+
+In order to install `swd_ros_controllers`, you need to add a third-party repository to `/etc/apt/sources.list` file.
+
+```shell
+echo "deb http://51.83.77.229:8081/apt-repo focal main" | sudo tee -a /etc/apt/sources.list
+```
+
+Then download and install the GPG key for the repository with the following bash command:
+
+```shell
+wget -qO - http://51.83.77.229:8081/archive.key | sudo apt-key add -
+```
 
 ## Installation
-Prerequisites:
-- Two SWD® equipments
-- A ROS Machine
-- Software SWD® services packages
 
-### From packages
-To use the package, you can install prebuilt packages (Ubuntu 20.04 is recommended) with
+On an Ubuntu based distro, install `ros-noetic-swd-ros-controllers` using the `apt` command:
 
 ```shell
-sudo apt install swd-ros-controllers
+sudo apt update && sudo apt install ros-noetic-swd-ros-controllers
 ```
-
-### From source
-
-To compile the package, you have to install prebuilt packages (Ubuntu 20.04 is recommended) with
-
-```shell
-sudo apt install swd-services
-```
-
-In the following instructions, replace <rosdistro> with the name of your ROS distro (e.g., noetic).
-
-```shell
-source /opt/ros/$ROS_DISTRO/setup.bash
-mkdir -p ~/ros_ws/src/
-cd ~/ros_ws/src/
-git clone https://github.com/ezWheelSAS/swd_ros_controllers.git
-cd ..
-catkin_make install
-source ~/ros_ws/install/setup.bash
-```
-
-### From cross-compilation
-TODO
 
 ## Usage
 
@@ -89,7 +66,7 @@ This controller drives two ez-Wheel SWD® wheels as a differential-drive robot.
 - `odom_frame` of type **`string`**: Frame ID for the `odom` fixed frame used in odometry and TFs (default `'odom'`) (see [REP-150](https://www.ros.org/reps/rep-0105.html) for more info).
 - `publish_odom` of type **`bool`**: Publish odometry messages (default `true`).
 - `publish_tf` of type **`bool`**: Publish odometry TF (default `true`).
-- `publish_safety_functions` of type **`bool`**: Publish **`ezw_ros_controllers::SafetyFunctions`** message (default `true`).
+- `publish_safety_functions` of type **`bool`**: Publish **`swd_ros_controllers::SafetyFunctions`** message (default `true`).
 - `wheel_max_speed_rpm` of type **`double`**: Maximum allowed wheel speed (in RPM), if a target speed of one of the wheels is above this limit, the controller will limit the speed of the two wheels without changing the robot's trajectory (default `75.0`).
 - `wheel_safety_limited_speed_rpm` of type **`double`**: Wheel safety limited speed (SLS) (in RPM), if an SLS signal is detected (from a security LiDAR for example), the wheel will be limited internally to the configured SLS limit, the ROS controller uses this value to limit the target speed sent to the motor in the SLS case (default `30.0`).
 - `ref_wheel` of type **`string`**: Internal parameter, used to select which wheels is set to a positive polarity (default `'Right'`).
@@ -104,7 +81,7 @@ This controller drives two ez-Wheel SWD® wheels as a differential-drive robot.
 ### Published Topics
 
 - `~odom` of type **`nav_msgs::Odometry`**: Pose an velocity of the robot, based on wheels encoders. Associated TFs are also published, unless disabled in parameters.
-- `~safety` of type **`swd_ros_controllers::SafetyFunctions`**: Safety messages communicated by the wheels via CANOpen, the message includes information about Safe Torque Off (STO), Safety Limited Speed (SLS), Safe Direction Indication (forward/backward) (SDI+/-), and Safe Brake Control (SBC) _(currently SDI(neg) and SBC are not published)_.
+- `~safety` of type **`swd_ros_controllers::SafetyFunctions`**: Safety messages communicated by the wheels via CANOpen, the message includes information about Safe Torque Off (STO), Safety Limited Speed (SLS), Safe Direction Indication (forward/backward) (SDI+/-), and Safe Brake Control (SBC) _(currently SDI(neg) and SBC are not published, they are reserved for future uses)_.
 
 ## Custom message types
 
@@ -121,12 +98,41 @@ bool safe_direction_indication_pos
 bool safe_direction_indication_neg (Reserved for future use)
 ```
 
+## Compiling from source
+
+To compile the package, you have to install `swd-services` package with
+
+```shell
+sudo apt-get update && sudo apt install swd-services
+```
+
+In the following instructions, replace `<rosdistro>` with the name of your ROS distro (e.g., `noetic`).
+
+```shell
+source /opt/ros/<rosdistro>/setup.bash
+mkdir -p ~/ros_ws/src/
+cd ~/ros_ws/src/
+git clone https://github.com/ezWheelSAS/swd_ros_controllers.git
+cd ..
+catkin_make install
+source ~/ros_ws/install/setup.bash
+```
+
+### Cross-compilation
+TODO
+ 
 ## Support
-In case of technical support, open a new issue.
+For any questions, please [open a GitHub issue](https://github.com/ezWheelSAS/swd_ros_controllers/issues).
 
-## About
-Innovative company founded in 2009 and located in Angoulême (France), the ez-Wheel company has developed the first industrial drive wheel integrating electric traction motor and rechargeable batteries.
+## About ez-Wheel®
+**ez-Wheel®** is an innovative company founded in 2009 and located in Angoulême, France. 
+The ez-Wheel company has developed the first industrial drive wheel, integrating electric traction motor, embedded electronics and rechargeable batteries.
 
-This revolutionary solution, which quickly turns any rolling material into an electrically assisted handling tool, has been adopted by hundreds of end-users to improve productivity and prevent from work accidents especially in the fields of Automotive, Factory logistics, Warehouses, Food processing, Hospitals and Pharmaceutics.
+This revolutionary solution, which quickly turns any manually handled platform into an electrically assisted one.
+Our solutions have been adopted by hundreds of end-users to improve productivity and prevent work accidents caused by manual handling. 
+Our products are used in a variety of applications, in fields of Automotive, Factory logistics, Warehouses, Food processing, Hospitals and Pharmaceutical industries.
 
-The [ez-Wheel](https://www.ez-wheel.com) company has developed a unique know-how in embedded electronics, including safety critical systems, applied to battery powered electric traction.
+The new SWD® product family targets industrial robotics applications, like Autonomous Mobile Robots (AMRs) and Automatic Guided Vehicles (AGVs).
+It provides a unique solution for safety critical systems, which provides safety features according to the **ISO 3691-4** standard.
+
+The [ez-Wheel®](https://www.ez-wheel.com) company has developed a unique know-how in embedded electronics, including safety critical systems, applied to battery powered electric traction.
