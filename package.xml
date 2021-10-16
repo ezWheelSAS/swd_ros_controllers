@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>swd_ros_controllers</name>
-  <version>1.2.0</version>
+  <version>1.2.1</version>
   <description>Package which control 2 wheels in as a differential drive robot</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->

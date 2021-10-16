@@ -36,6 +36,7 @@ using namespace std::chrono_literals;
 #define DEFAULT_PUBLISH_ODOM        true
 #define DEFAULT_PUBLISH_TF          true
 #define DEFAULT_PUBLISH_SAFETY_FCNS true
+#define DEFAULT_BACKWARD_SLS        false
 
 namespace ezw
 {
@@ -56,6 +57,7 @@ namespace ezw
             m_publish_odom                      = m_nh->param("publish_odom", DEFAULT_PUBLISH_ODOM);
             m_publish_tf                        = m_nh->param("publish_tf", DEFAULT_PUBLISH_TF);
             m_publish_safety                    = m_nh->param("publish_safety_functions", DEFAULT_PUBLISH_SAFETY_FCNS);
+            m_have_backward_sls                 = m_nh->param("have_backward_sls", DEFAULT_BACKWARD_SLS);
             double      max_wheel_speed_rpm     = m_nh->param("wheel_max_speed_rpm", DEFAULT_MAX_WHEEL_SPEED_RPM);
             double      max_sls_wheel_speed_rpm = m_nh->param("wheel_safety_limited_speed_rpm", DEFAULT_MAX_SLS_WHEEL_RPM);
             std::string ref_wheel               = m_nh->param("ref_wheel", DEFAULT_REF_WHEEL);
@@ -518,10 +520,11 @@ namespace ezw
                 speed_limit = m_max_motor_speed_rpm;
             }
 
-            // In backward movement, impose the safety limited speed (SLS)
-            // This assumes the robot to have only one safety LiDAR mounted on the front,
-            // when the robot moves backward, there's no safety guarantees, so speed is limited to SLS
-            if ((left_speed < 0) && (right_speed < 0) && (faster_wheel_speed > m_motor_sls_rpm)) {
+            // Impose the safety limited speed (SLS) in backward movement when the robot doesn't have backward SLS signal.
+            // For example, if it has only one forward-facing safety LiDAR, when the robot move backwards, there's no
+            // safety guarantees, hence speed is limited to SLS, otherwise, the safety limit will be decided by the
+            // presence of the SLS signal.
+            if (!m_have_backward_sls && (left_speed < 0) && (right_speed < 0) && (faster_wheel_speed > m_motor_sls_rpm)) {
                 speed_limit = m_motor_sls_rpm;
             }
 

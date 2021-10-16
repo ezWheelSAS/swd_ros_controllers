@@ -14,6 +14,7 @@
         <rosparam param="ref_wheel">"Left"</rosparam>
         <rosparam param="wheel_max_speed_rpm">95</rosparam>
         <rosparam param="wheel_safety_limited_speed_rpm">40</rosparam>
+        <rosparam param="have_backward_sls">false</rosparam>
         <rosparam param="publish_odom">true</rosparam>
         <rosparam param="publish_tf">true</rosparam>
         <rosparam param="publish_safety_functions">true</rosparam>
