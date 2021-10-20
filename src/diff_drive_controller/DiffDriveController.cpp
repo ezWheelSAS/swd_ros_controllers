@@ -403,7 +403,7 @@ namespace ezw
 
             // Kinematic model
             double d_dist_center = (d_dist_left + d_dist_right) / 2.0;
-            double d_theta       = static_cast<double>(m_left_wheel_polarity) * (d_dist_right - d_dist_left) / m_baseline_m;
+            double d_theta       = (d_dist_right - d_dist_left) / m_baseline_m;
 
             // Odometry model, integration of the diff drive kinematic model
             double x_now     = m_x_prev + d_dist_center * std::cos(m_theta_prev);
