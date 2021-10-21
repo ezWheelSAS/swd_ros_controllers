@@ -348,6 +348,14 @@ namespace ezw
             }
 
             m_pds_ok = (smccore::Controller::PDSState::OPERATION_ENABLED == pds_state_l) && (smccore::Controller::PDSState::OPERATION_ENABLED == pds_state_r);
+
+            if (!m_nmt_ok) {
+                ROS_WARN("NMT state machine is not OK.");
+            }
+
+            if (!m_pds_ok) {
+                ROS_WARN("PDS state machine is not OK.");
+            }
         }
 
         void DiffDriveController::cbSoftBrake(const std_msgs::Bool::ConstPtr &msg)
