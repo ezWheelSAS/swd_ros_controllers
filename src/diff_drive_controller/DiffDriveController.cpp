@@ -406,7 +406,7 @@ namespace ezw
             // Odometry model, integration of the diff drive kinematic model
             double x_now     = m_x_prev + d_dist_center * std::cos(m_theta_prev);
             double y_now     = m_y_prev + d_dist_center * std::sin(m_theta_prev);
-            double theta_now = boundAngle(m_theta_prev + d_theta);
+            double theta_now = M_BOUND_ANGLE(m_theta_prev + d_theta);
 
             msg_odom.header.stamp    = timestamp;
             msg_odom.header.frame_id = m_odom_frame;
