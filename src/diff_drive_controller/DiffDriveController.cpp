@@ -611,6 +611,27 @@ namespace ezw
                 msg.header.stamp = ros::Time::now();
                 msg.header.frame_id = m_base_frame;
 
+                // Reading SBC
+                err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SBC_1, res_l);
+                if (ERROR_NONE != err) {
+                    ROS_ERROR("Error reading SBC from left motor, EZW_ERR: SMCService : "
+                              "Controller::getSafetyFunctionCommand() return error code : %d",
+                              (int)err);
+                }
+
+                err = m_right_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SBC_1, res_r);
+                if (ERROR_NONE != err) {
+                    ROS_ERROR("Error reading SBC from right motor, EZW_ERR: SMCService : "
+                              "Controller::getSafetyFunctionCommand() return error code : %d",
+                              (int)err);
+                }
+
+                msg.safe_brake_control = !(res_l || res_r);
+
+                if (res_l != res_r) {
+                    ROS_ERROR("Inconsistant SBC for left and right motors, left=%d, right=%d.", res_l, res_r);
+                }
+
                 // Reading STO
                 err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::STO, res_l);
                 if (ERROR_NONE != err) {

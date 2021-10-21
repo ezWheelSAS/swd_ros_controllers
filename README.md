@@ -82,7 +82,7 @@ This controller drives two ez-Wheel SWD® wheels as a differential-drive robot.
 ### Published Topics
 
 - `~odom` of type **`nav_msgs::Odometry`**: Pose an velocity of the robot, based on wheels encoders. Associated TFs are also published, unless disabled in parameters.
-- `~safety` of type **`swd_ros_controllers::SafetyFunctions`**: Safety messages communicated by the wheels via CANOpen, the message includes information about Safe Torque Off (STO), Safety Limited Speed (SLS), Safe Direction Indication (forward/backward) (SDI+/-), and Safe Brake Control (SBC) _(currently SBC is not published, it has been reserved for future use)_.
+- `~safety` of type **`swd_ros_controllers::SafetyFunctions`**: Safety messages communicated by the wheels via CANOpen, the message includes information about Safe Torque Off (STO), Safety Limited Speed (SLS), Safe Direction Indication (forward/backward) (SDI+/-), and Safe Brake Control (SBC).
 
 ## Custom message types
 
@@ -93,7 +93,7 @@ This message encodes the safety functions read from the SWD via CANOpen.
 ```
 Header header
 bool safe_torque_off
-bool safe_brake_control (Reserved for future use)
+bool safe_brake_control
 bool safety_limited_speed
 bool safe_direction_indication_pos
 bool safe_direction_indication_neg
