@@ -11,7 +11,7 @@
         <rosparam param="control_mode">"Twist"</rosparam>
         <rosparam param="base_frame">"base_link"</rosparam>
         <rosparam param="odom_frame">"odom"</rosparam>
-        <rosparam param="ref_wheel">"Left"</rosparam>
+        <rosparam param="positive_polarity_wheel">"Right"</rosparam>
         <rosparam param="wheel_max_speed_rpm">95</rosparam>
         <rosparam param="wheel_safety_limited_speed_rpm">40</rosparam>
         <rosparam param="have_backward_sls">false</rosparam>

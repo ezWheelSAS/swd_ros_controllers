@@ -25,18 +25,18 @@ using namespace std::chrono_literals;
 #define VERBOSE_OUTPUT          0
 
 // Default values for parameters
-#define DEFAULT_ODOM_FRAME          std::string("odom")
-#define DEFAULT_BASE_FRAME          std::string("base_link")
-#define DEFAULT_REF_WHEEL           std::string("Right")
-#define DEFAULT_CTRL_MODE           std::string("Twist")
-#define DEFAULT_MAX_WHEEL_SPEED_RPM 75.0 // 75 rpm Wheel => Motor (75 * 14 = 1050 rpm)
-#define DEFAULT_MAX_SLS_WHEEL_RPM   30.0 // 30 rpm Wheel => Motor (30 * 14 = 490 rpm)
-#define DEFAULT_PUB_FREQ_HZ         50
-#define DEFAULT_WATCHDOG_MS         1000
-#define DEFAULT_PUBLISH_ODOM        true
-#define DEFAULT_PUBLISH_TF          true
-#define DEFAULT_PUBLISH_SAFETY_FCNS true
-#define DEFAULT_BACKWARD_SLS        false
+#define DEFAULT_ODOM_FRAME              std::string("odom")
+#define DEFAULT_BASE_FRAME              std::string("base_link")
+#define DEFAULT_POSITIVE_POLARITY_WHEEL std::string("Right")
+#define DEFAULT_CTRL_MODE               std::string("Twist")
+#define DEFAULT_MAX_WHEEL_SPEED_RPM     75.0 // 75 rpm Wheel => Motor (75 * 14 = 1050 rpm)
+#define DEFAULT_MAX_SLS_WHEEL_RPM       30.0 // 30 rpm Wheel => Motor (30 * 14 = 490 rpm)
+#define DEFAULT_PUB_FREQ_HZ             50
+#define DEFAULT_WATCHDOG_MS             1000
+#define DEFAULT_PUBLISH_ODOM            true
+#define DEFAULT_PUBLISH_TF              true
+#define DEFAULT_PUBLISH_SAFETY_FCNS     true
+#define DEFAULT_BACKWARD_SLS            false
 
 namespace ezw
 {
@@ -60,17 +60,17 @@ namespace ezw
             m_have_backward_sls                 = m_nh->param("have_backward_sls", DEFAULT_BACKWARD_SLS);
             double      max_wheel_speed_rpm     = m_nh->param("wheel_max_speed_rpm", DEFAULT_MAX_WHEEL_SPEED_RPM);
             double      max_sls_wheel_speed_rpm = m_nh->param("wheel_safety_limited_speed_rpm", DEFAULT_MAX_SLS_WHEEL_RPM);
-            std::string ref_wheel               = m_nh->param("ref_wheel", DEFAULT_REF_WHEEL);
+            std::string positive_polarity_wheel = m_nh->param("positive_polarity_wheel", DEFAULT_POSITIVE_POLARITY_WHEEL);
             std::string ctrl_mode               = m_nh->param("control_mode", DEFAULT_CTRL_MODE);
 
-            if ("Left" == ref_wheel) {
-                m_left_wheel_polarity = -1;
-            } else {
+            if ("Left" == positive_polarity_wheel) {
                 m_left_wheel_polarity = 1;
-                if ("Right" != ref_wheel) {
-                    ROS_WARN("Invalid value '%s' for parameter 'ref_wheel', accepted values: ['Right' or 'Left']."
+            } else {
+                m_left_wheel_polarity = -1;
+                if ("Right" != positive_polarity_wheel) {
+                    ROS_WARN("Invalid value '%s' for parameter 'positive_polarity_wheel, accepted values: ['Left' or 'Right']."
                              "Falling back to default (%s).",
-                             ref_wheel.c_str(), DEFAULT_REF_WHEEL.c_str());
+                             positive_polarity_wheel.c_str(), DEFAULT_POSITIVE_POLARITY_WHEEL.c_str());
                 }
             }
 
