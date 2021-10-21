@@ -528,8 +528,12 @@ namespace ezw
                 speed_limit = m_motor_sls_rpm;
             }
 
+            m_safety_msg_mtx.lock();
+            bool sls_signal = m_safety_msg.safety_limited_speed;
+            m_safety_msg_mtx.unlock();
+
             // If SLS detected, impose the safety limited speed (SLS)
-            if (m_safety_msg.safety_limited_speed && (faster_wheel_speed > m_motor_sls_rpm)) {
+            if (sls_signal && (faster_wheel_speed > m_motor_sls_rpm)) {
                 speed_limit = m_motor_sls_rpm;
             }
 
