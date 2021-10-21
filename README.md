@@ -7,33 +7,60 @@ This package has been tested on ROS Melodic and Noetic, it contains ROS nodes to
 |------------|-------------|-------------|
 | [SWD® Core](https://www.ez-wheel.com/en/safety-gear-motor) <br />Safety gear motor | [SWD® 150](https://www.ez-wheel.com/en/swd-150-safety-wheel-drive) <br />Safety wheel drive | [SWD® StarterKit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr) <br />Development kit for AGV and AMR |
 
-## Prerequisites
-- Two SWD® equipments
-- An Ubuntu 20.04 ROS Machine
-- `swd-services (>= 0.1.0)` installed
+## Installation
+This package has been tested on **x64_86** and **armhf** machines. 
+Pre-built packages are available for ROS Noetic on Ubuntu 20.04 (for **x64_86** and **armhf**).
 
-## Ubuntu repositories configuration
+### Prerequisites
+- Two SWD® based wheels
+- Ubuntu 20.04
+- ROS Noetic
+- `swd-services (>= 0.1.0)`
 
-In order to install `swd_ros_controllers`, you need to add a third-party repository to `/etc/apt/sources.list` file.
+### Ubuntu
+
+In order to install `swd_ros_controllers`, you need to add the ez-Wheel repository to `/etc/apt/sources.list`.
 
 ```shell
 echo "deb http://51.83.77.229:8081/apt-repo focal main" | sudo tee -a /etc/apt/sources.list
 ```
 
-Then download and install the GPG key for the repository with the following bash command:
+Then download and add the GPG key using following command:
 
 ```shell
 wget -qO - http://51.83.77.229:8081/archive.key | sudo apt-key add -
 ```
 
-## Installation
-
-On an Ubuntu based distro, install `ros-noetic-swd-ros-controllers` using the `apt` command:
+Now, you should be able to install the `ros-noetic-swd-ros-controllers` package using `apt`:
 
 ```shell
 sudo apt update && sudo apt install ros-noetic-swd-ros-controllers
 ```
 
+### Compiling from source
+
+To compile the package, make sure you have added the ez-Wheel repository to your `/etc/apt/sources.list` as specified above. 
+Then you need to install `swd-services` using:
+
+```shell
+sudo apt-get update && sudo apt install swd-services
+```
+
+In the following instructions, replace `<rosdistro>` with the name of your ROS distro (e.g., `noetic`).
+
+```shell
+source /opt/ros/<rosdistro>/setup.bash
+mkdir -p ~/ros_ws/src/
+cd ~/ros_ws/src/
+git clone https://github.com/ezWheelSAS/swd_ros_controllers.git
+cd ..
+catkin_make install
+source ~/ros_ws/install/setup.bash
+```
+
+### Cross-compilation
+TODO
+ 
 ## Usage
 
 The package comes with a preconfigured `.launch` file for the [SWD® Starter Kit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr):
@@ -99,29 +126,6 @@ bool safe_direction_indication_pos
 bool safe_direction_indication_neg
 ```
 
-## Compiling from source
-
-To compile the package, you have to install `swd-services` package with
-
-```shell
-sudo apt-get update && sudo apt install swd-services
-```
-
-In the following instructions, replace `<rosdistro>` with the name of your ROS distro (e.g., `noetic`).
-
-```shell
-source /opt/ros/<rosdistro>/setup.bash
-mkdir -p ~/ros_ws/src/
-cd ~/ros_ws/src/
-git clone https://github.com/ezWheelSAS/swd_ros_controllers.git
-cd ..
-catkin_make install
-source ~/ros_ws/install/setup.bash
-```
-
-### Cross-compilation
-TODO
- 
 ## Support
 For any questions, please [open a GitHub issue](https://github.com/ezWheelSAS/swd_ros_controllers/issues).
 
