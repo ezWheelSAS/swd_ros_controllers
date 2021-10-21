@@ -609,6 +609,7 @@ namespace ezw
 #else
             if (m_nmt_ok) {
                 msg.header.stamp = ros::Time::now();
+                msg.header.frame_id = m_base_frame;
 
                 // Reading STO
                 err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::STO, res_l);
@@ -632,33 +633,46 @@ namespace ezw
                 }
 
                 // Reading SDI
-                ezw::smccore::Controller::SafetyFunctionId safety_fcn_l, safety_fcn_r;
+                bool sdi_l_p, sdi_l_n, sdi_r_p, sdi_r_n, sdi_p, sdi_n;
+
+                err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SDIP_1, sdi_l_p);
+                if (ERROR_NONE != err) {
+                    ROS_ERROR("Error reading SDI+ from left motor, EZW_ERR: SMCService : "
+                              "Controller::getSafetyFunctionCommand() return error code : %d",
+                              (int)err);
+                }
+
+                err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SDIN_1, sdi_l_n);
+                if (ERROR_NONE != err) {
+                    ROS_ERROR("Error reading SDI- from left motor, EZW_ERR: SMCService : "
+                              "Controller::getSafetyFunctionCommand() return error code : %d",
+                              (int)err);
+                }
+
+                err = m_right_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SDIP_1, sdi_r_p);
+                if (ERROR_NONE != err) {
+                    ROS_ERROR("Error reading SDI+ from right motor, EZW_ERR: SMCService : "
+                              "Controller::getSafetyFunctionCommand() return error code : %d",
+                              (int)err);
+                }
+
+                err = m_right_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SDIN_1, sdi_r_n);
+                if (ERROR_NONE != err) {
+                    ROS_ERROR("Error reading SDI- from right motor, EZW_ERR: SMCService : "
+                              "Controller::getSafetyFunctionCommand() return error code : %d",
+                              (int)err);
+                }
 
                 if (m_left_wheel_polarity == 1) {
-                    // Right
-                    safety_fcn_l = ezw::smccore::Controller::SafetyFunctionId::SDIP_1;
-                    safety_fcn_r = ezw::smccore::Controller::SafetyFunctionId::SDIN_1;
+                    sdi_p = !(sdi_l_p || sdi_r_n);
+                    sdi_n = !(sdi_l_n || sdi_r_p);
                 } else {
-                    // Left
-                    safety_fcn_l = ezw::smccore::Controller::SafetyFunctionId::SDIN_1;
-                    safety_fcn_r = ezw::smccore::Controller::SafetyFunctionId::SDIP_1;
+                    sdi_p = !(sdi_l_n || sdi_r_p);
+                    sdi_n = !(sdi_l_p || sdi_r_n);
                 }
 
-                err = m_left_controller.getSafetyFunctionCommand(safety_fcn_l, res_l);
-                if (ERROR_NONE != err) {
-                    ROS_ERROR("Error reading SDI from left motor, EZW_ERR: SMCService : "
-                              "Controller::getSafetyFunctionCommand() return error code : %d",
-                              (int)err);
-                }
-
-                err = m_right_controller.getSafetyFunctionCommand(safety_fcn_r, res_r);
-                if (ERROR_NONE != err) {
-                    ROS_ERROR("Error reading SDI from right motor, EZW_ERR: SMCService : "
-                              "Controller::getSafetyFunctionCommand() return error code : %d",
-                              (int)err);
-                }
-
-                msg.safe_direction_indication_pos = !(res_r || res_l);
+                msg.safe_direction_indication_pos = sdi_p;
+                msg.safe_direction_indication_neg = sdi_n;
 
                 // Reading SLS
                 err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SLS_1, res_l);
