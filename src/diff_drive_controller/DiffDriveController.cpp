@@ -350,24 +350,22 @@ namespace ezw
             m_pds_ok = (smccore::Controller::PDSState::OPERATION_ENABLED == pds_state_l) && (smccore::Controller::PDSState::OPERATION_ENABLED == pds_state_r);
         }
 
-        void DiffDriveController::cbSoftBrake(const std_msgs::String::ConstPtr &msg)
+        void DiffDriveController::cbSoftBrake(const std_msgs::Bool::ConstPtr &msg)
         {
-            // "enable" or something else -> Stop
-            // "disable" -> Release
-            bool halt = ("disable" == msg->data) ? false : true;
-
-            ezw_error_t err = m_left_controller.setHalt(halt);
+            // true => Enable brake
+            // false => Release brake
+            ezw_error_t err = m_left_controller.setHalt(msg->data);
             if (ERROR_NONE != err) {
-                ROS_ERROR("SoftBrake: Failed %s left wheel, EZW_ERR: %d", halt ? "braking" : "releasing", (int)err);
+                ROS_ERROR("SoftBrake: Failed %s left wheel, EZW_ERR: %d", msg->data ? "braking" : "releasing", (int)err);
             } else {
-                ROS_INFO("SoftBrake: Left motor's soft brake %s", halt ? "activated" : "disabled");
+                ROS_INFO("SoftBrake: Left motor's soft brake %s", msg->data ? "activated" : "disabled");
             }
 
-            err = m_right_controller.setHalt(halt);
+            err = m_right_controller.setHalt(msg->data);
             if (ERROR_NONE != err) {
-                ROS_ERROR("SoftBrake: Failed %s right wheel, EZW_ERR: %d", halt ? "braking" : "releasing", (int)err);
+                ROS_ERROR("SoftBrake: Failed %s right wheel, EZW_ERR: %d", msg->data ? "braking" : "releasing", (int)err);
             } else {
-                ROS_INFO("SoftBrake: Right motor's soft brake %s", halt ? "activated" : "disabled");
+                ROS_INFO("SoftBrake: Right motor's soft brake %s", msg->data ? "activated" : "disabled");
             }
         }
 

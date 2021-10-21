@@ -16,6 +16,7 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Twist.h>
 #include <std_msgs/String.h>
+#include <std_msgs/Bool.h>
 
 #include <cmath>
 #include <mutex>
@@ -77,7 +78,7 @@ namespace ezw
             void setSpeeds(int32_t left_speed, int32_t right_speed);
             void cbSetSpeed(const geometry_msgs::PointConstPtr &speed);
             void cbCmdVel(const geometry_msgs::TwistPtr &speed);
-            void cbSoftBrake(const std_msgs::String::ConstPtr &msg);
+            void cbSoftBrake(const std_msgs::Bool::ConstPtr &msg);
             void cbTimerOdom(), cbWatchdog(), cbTimerStateMachine(), cbTimerSafety();
 
             inline double boundAngle(double a)

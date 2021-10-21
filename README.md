@@ -77,7 +77,7 @@ This controller drives two ez-Wheel SWD® wheels as a differential-drive robot.
 
 - `~cmd_vel` of type **`geometry_msgs::Twist`**: Target linear and angular velocities (when `control_mode:='Twist'`, this is the default).
 - `~set_speed` of type **`geometry_msgs::Point`**: Target speeds in rad/s for left (`Point.x`) and right (`Point.y`) wheels (when `control_mode:='LeftRightSpeeds'`).
-- `~soft_brake` of type **`std_msgs::String`**: Activate or release the soft brake, send `'disable'` to release the brake, or `'enable'` to activate it.
+- `~soft_brake` of type **`std_msgs::Bool`**: Activate or release the soft brake, send `false` to release the brake, or `true` to activate it.
 
 ### Published Topics
 
