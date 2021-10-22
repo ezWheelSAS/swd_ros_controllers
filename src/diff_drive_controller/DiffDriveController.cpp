@@ -474,7 +474,7 @@ namespace ezw
 
             // Convert rad/s wheel speed to rpm motor speed
             int32_t left  = static_cast<int32_t>(speed->x * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
-            int32_t right = static_cast<int32_t>(speed->y * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
+            int32_t right = static_cast<int32_t>(speed->y * m_r_motor_reduction * 60.0 / (2.0 * M_PI));
 
 #if VERBOSE_OUTPUT
             ROS_INFO("Got RightLeftSpeeds command: (left, right) = (%f, %f) rad/s. "
