@@ -605,18 +605,18 @@ namespace ezw
 
             err = m_left_controller.getSafetyControlWord(ezw::smccore::Controller::SafetyControlWordId::SAFEIN_1, res);
 
-            msg.safe_torque_off               = res.safety_function_2 && res.safety_function_3;
-            msg.safe_direction_indication_pos = res.safety_function_2 && res.safety_function_3;
-            msg.safety_limited_speed          = res.safety_function_4 && res.safety_function_5;
+            msg.safe_torque_off                   = res.safety_function_2 && res.safety_function_3;
+            msg.safe_direction_indication_forward = res.safety_function_2 && res.safety_function_3;
+            msg.safety_limited_speed              = res.safety_function_4 && res.safety_function_5;
 
 #if VERBOSE_OUTPUT
-            ROS_INFO("STO: %d, SDI+: %d, SLS: %d", msg.safe_torque_off, msg.safe_direction_indication_pos, msg.safety_limited_speed);
+            ROS_INFO("STO: %d, SDI+: %d, SLS: %d", msg.safe_torque_off, msg.safe_direction_indication_forward, msg.safety_limited_speed);
 #endif
 
             m_pub_safety.publish(msg);
 #else
             if (m_nmt_ok) {
-                msg.header.stamp = ros::Time::now();
+                msg.header.stamp    = ros::Time::now();
                 msg.header.frame_id = m_base_frame;
 
                 // Reading SBC
@@ -700,8 +700,8 @@ namespace ezw
                     sdi_n = !(sdi_l_p || sdi_r_n);
                 }
 
-                msg.safe_direction_indication_pos = sdi_p;
-                msg.safe_direction_indication_neg = sdi_n;
+                msg.safe_direction_indication_forward  = sdi_p;
+                msg.safe_direction_indication_backward = sdi_n;
 
                 // Reading SLS
                 err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SLS_1, res_l);
@@ -721,7 +721,7 @@ namespace ezw
                 msg.safety_limited_speed = !(res_r || res_l);
 
 #if VERBOSE_OUTPUT
-                ROS_INFO("STO: %d, SDI+: %d, SLS: %d", msg.safe_torque_off, msg.safe_direction_indication_pos, msg.safety_limited_speed);
+                ROS_INFO("STO: %d, SDI+: %d, SLS: %d", msg.safe_torque_off, msg.safe_direction_indication_forward, msg.safety_limited_speed);
 #endif
 
                 m_safety_msg_mtx.lock();
