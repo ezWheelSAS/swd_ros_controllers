@@ -58,9 +58,6 @@ catkin_make install
 source ~/ros_ws/install/setup.bash
 ```
 
-### Cross-compilation
-TODO
- 
 ## Usage
 
 The package comes with a preconfigured `.launch` file for the [SWD® Starter Kit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr):
