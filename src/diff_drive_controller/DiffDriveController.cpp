@@ -24,6 +24,14 @@ using namespace std::chrono_literals;
 #define USE_SAFETY_CONTROL_WORD 0
 #define VERBOSE_OUTPUT          0
 
+// Relative errors, used to calculate the covariance matrix in the odometry message
+// Used as follow:
+// d_dist_left +/- abs(d_dist_left) * LEFT_RELATIVE_ERROR_TERM + LEFT_ADDITIVE_ERROR_TERM
+#define LEFT_RELATIVE_ERROR_TERM  0.05 // 5% of error
+#define RIGHT_RELATIVE_ERROR_TERM 0.05
+#define LEFT_ADDITIVE_ERROR_TERM  0.0
+#define RIGHT_ADDITIVE_ERROR_TERM 0.0
+
 // Default values for parameters
 #define DEFAULT_ODOM_FRAME              std::string("odom")
 #define DEFAULT_BASE_FRAME              std::string("base_link")
@@ -405,16 +413,29 @@ namespace ezw
             double d_dist_left  = static_cast<double>(left_dist_now_mm - m_dist_left_prev_mm) / 1000.0;
             double d_dist_right = static_cast<double>(right_dist_now_mm - m_dist_right_prev_mm) / 1000.0;
 
+            // Error calculation (standard deviation)
+            double d_dist_left_err  = LEFT_RELATIVE_ERROR_TERM * std::abs(d_dist_left) + LEFT_ADDITIVE_ERROR_TERM;
+            double d_dist_right_err = RIGHT_RELATIVE_ERROR_TERM * std::abs(d_dist_right) + RIGHT_ADDITIVE_ERROR_TERM;
+
             ros::Time timestamp = ros::Time::now();
 
             // Kinematic model
             double d_dist_center = (d_dist_left + d_dist_right) / 2.0;
             double d_theta       = (d_dist_right - d_dist_left) / m_baseline_m;
 
+            // Error propagation (See https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Non-linear_combinations)
+            double d_dist_center_err = std::sqrt(std::pow(d_dist_left_err / 2.0, 2) + std::pow(d_dist_right_err / 2.0, 2));
+            double d_theta_err       = std::sqrt(std::pow(d_dist_left_err / m_baseline_m, 2) + std::pow(d_dist_right_err / m_baseline_m, 2));
+
             // Odometry model, integration of the diff drive kinematic model
             double x_now     = m_x_prev + d_dist_center * std::cos(m_theta_prev);
             double y_now     = m_y_prev + d_dist_center * std::sin(m_theta_prev);
             double theta_now = M_BOUND_ANGLE(m_theta_prev + d_theta);
+
+            // Error propagation
+            double x_now_err     = std::sqrt(std::pow(m_x_prev_err, 2) + std::pow(std::cos(m_theta_prev) * d_dist_center_err, 2) + std::pow(-std::sin(m_theta_prev) * d_dist_center * m_theta_prev_err, 2));
+            double y_now_err     = std::sqrt(std::pow(m_y_prev_err, 2) + std::pow(std::sin(m_theta_prev) * d_dist_center_err, 2) + std::pow(std::cos(m_theta_prev) * d_dist_center * m_theta_prev_err, 2));
+            double theta_now_err = std::sqrt(std::pow(m_theta_prev_err, 2) + std::pow(d_theta_err, 2));
 
             msg_odom.header.stamp    = timestamp;
             msg_odom.header.frame_id = m_odom_frame;
@@ -423,6 +444,10 @@ namespace ezw
             msg_odom.twist                 = geometry_msgs::TwistWithCovariance();
             msg_odom.twist.twist.linear.x  = d_dist_center * m_pub_freq_hz;
             msg_odom.twist.twist.angular.z = d_theta * m_pub_freq_hz;
+
+            // Set uncertainties for linear and angular velocities (6 * 6) matrix (x y z Rx Ry Rz)
+            msg_odom.twist.covariance[0]  = std::pow(d_dist_center_err, 2);
+            msg_odom.twist.covariance[35] = std::pow(d_theta_err, 2);
 
             msg_odom.pose.pose.position.x = x_now;
             msg_odom.pose.pose.position.y = y_now;
@@ -434,6 +459,11 @@ namespace ezw
             msg_odom.pose.pose.orientation.y = quat_orientation.getY();
             msg_odom.pose.pose.orientation.z = quat_orientation.getZ();
             msg_odom.pose.pose.orientation.w = quat_orientation.getW();
+
+            // Set uncertainties for x, y, and theta (Rz)
+            msg_odom.pose.covariance[0]  = std::pow(x_now_err, 2);
+            msg_odom.pose.covariance[7]  = std::pow(y_now_err, 2);
+            msg_odom.pose.covariance[35] = std::pow(theta_now_err, 2);
 
             if (m_publish_odom) {
                 m_pub_odom.publish(msg_odom);
@@ -460,6 +490,9 @@ namespace ezw
             m_x_prev             = x_now;
             m_y_prev             = y_now;
             m_theta_prev         = theta_now;
+            m_x_prev_err         = x_now_err;
+            m_y_prev_err         = y_now_err;
+            m_theta_prev_err     = theta_now_err;
             m_dist_left_prev_mm  = left_dist_now_mm;
             m_dist_right_prev_mm = right_dist_now_mm;
         }

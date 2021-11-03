@@ -73,6 +73,7 @@ namespace ezw
             swd_ros_controllers::SafetyFunctions m_safety_msg;
 
             double  m_x_prev = 0.0, m_y_prev = 0.0, m_theta_prev = 0.0;
+            double  m_x_prev_err = 0.0, m_y_prev_err = 0.0, m_theta_prev_err = 0.0;
             int32_t m_dist_left_prev_mm = 0, m_dist_right_prev_mm = 0;
 
             void setSpeeds(int32_t left_speed, int32_t right_speed);
