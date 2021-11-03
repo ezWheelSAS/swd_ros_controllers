@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.0)
 project(swd_ros_controllers)
 
 if(NOT DEFINED PRJ_VERSION)
-  set(PRJ_VERSION "2.0.0")
+  set(PRJ_VERSION "2.0.1")
 endif(NOT DEFINED PRJ_VERSION)
 
 
