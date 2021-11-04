@@ -446,8 +446,8 @@ namespace ezw
             msg_odom.twist.twist.angular.z = d_theta * m_pub_freq_hz;
 
             // Set uncertainties for linear and angular velocities (6 * 6) matrix (x y z Rx Ry Rz)
-            msg_odom.twist.covariance[0]  = std::pow(d_dist_center_err, 2);
-            msg_odom.twist.covariance[35] = std::pow(d_theta_err, 2);
+            msg_odom.twist.covariance[0]  = std::pow(d_dist_center_err * m_pub_freq_hz, 2);
+            msg_odom.twist.covariance[35] = std::pow(d_theta_err * m_pub_freq_hz, 2);
 
             msg_odom.pose.pose.position.x = x_now;
             msg_odom.pose.pose.position.y = y_now;
