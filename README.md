@@ -1,17 +1,20 @@
 # ez-Wheel SWD® ROS Controllers
 
 ## Overview
+
 This package has been tested on ROS Melodic and Noetic, it contains ROS nodes to control motors powered by the [ez-Wheel](https://www.ez-wheel.com) Safety Wheel Drive (SWD®) technology.
 
-<img src="https://www.ez-wheel.com/storage/image-product/visuels-swd-core-2-0-0.png" width="45%"></img> | <img src="https://www.ez-wheel.com/storage/image-product/roue-electrique-swd-150-2-0-0-0.png" width="45%"></img> | <img src="https://www.ez-wheel.com/storage/image-product/starterkit-ez-wheel-web-0-0-0.png" width="45%"></img> |
-|------------|-------------|-------------|
-| [SWD® Core](https://www.ez-wheel.com/en/safety-gear-motor) <br />Safety gear motor | [SWD® 150](https://www.ez-wheel.com/en/swd-150-safety-wheel-drive) <br />Safety wheel drive | [SWD® StarterKit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr) <br />Development kit for AGV and AMR |
+| <img src="https://www.ez-wheel.com/storage/image-product/visuels-swd-core-2-0-0.png" width="45%"></img> | <img src="https://www.ez-wheel.com/storage/image-product/roue-electrique-swd-150-2-0-0-0.png" width="45%"></img> | <img src="https://www.ez-wheel.com/storage/image-product/starterkit-ez-wheel-web-0-0-0.png" width="45%"></img>       |
+| ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| [SWD® Core](https://www.ez-wheel.com/en/safety-gear-motor) <br />Safety gear motor                      | [SWD® 150](https://www.ez-wheel.com/en/swd-150-safety-wheel-drive) <br />Safety wheel drive                      | [SWD® StarterKit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr) <br />Development kit for AGV and AMR |
 
 ## Installation
-This package has been tested on **x64_86** and **armhf** machines. 
+
+This package has been tested on **x64_86** and **armhf** machines.
 Pre-built packages are available for ROS Noetic on Ubuntu 20.04 (for **x64_86** and **armhf**).
 
 ### Prerequisites
+
 - Two SWD® based wheels
 - Ubuntu 20.04
 - ROS Noetic
@@ -39,7 +42,7 @@ sudo apt update && sudo apt install ros-noetic-swd-ros-controllers
 
 ### Compiling from source
 
-To compile the package, make sure you have added the ez-Wheel repository to your `/etc/apt/sources.list` as specified above. 
+To compile the package, make sure you have added the ez-Wheel repository to your `/etc/apt/sources.list` as specified above.
 Then you need to install `swd-services` using:
 
 ```shell
@@ -105,7 +108,7 @@ This controller drives two ez-Wheel SWD® wheels as a differential-drive robot.
 
 ### Published Topics
 
-- `~odom` of type **`nav_msgs::Odometry`**: Pose an velocity of the robot, based on wheels encoders. Associated TFs are also published, unless disabled in parameters.
+- `~odom` of type **`nav_msgs::Odometry`**: Odometry message based on wheels encoders, containing the pose and velocity of the robot with their's associated uncertainties. Unless disabled by the `publish_tf` parameter, TFs with the same information are also published.
 - `~safety` of type **`swd_ros_controllers::SafetyFunctions`**: Safety messages communicated by the wheels via CANOpen, the message includes information about Safe Torque Off (STO), Safety Limited Speed (SLS), Safe Direction Indication (forward/backward) (SDI+/-), and Safe Brake Control (SBC).
 
 ## Custom message types
@@ -124,14 +127,16 @@ bool safe_direction_indication_backward
 ```
 
 ## Support
+
 For any questions, please [open a GitHub issue](https://github.com/ezWheelSAS/swd_ros_controllers/issues).
 
 ## About ez-Wheel®
-**ez-Wheel®** is an innovative company founded in 2009 and located in Angoulême, France. 
+
+**ez-Wheel®** is an innovative company founded in 2009 and located in Angoulême, France.
 The ez-Wheel company has developed the first industrial drive wheel, integrating electric traction motor, embedded electronics and rechargeable batteries.
 
 This revolutionary solution, which quickly turns any manually handled platform into an electrically assisted one.
-Our solutions have been adopted by hundreds of end-users to improve productivity and prevent work accidents caused by manual handling. 
+Our solutions have been adopted by hundreds of end-users to improve productivity and prevent work accidents caused by manual handling.
 Our products are used in a variety of applications, in fields of Automotive, Factory logistics, Warehouses, Food processing, Hospitals and Pharmaceutical industries.
 
 The new SWD® product family targets industrial robotics applications, like Autonomous Mobile Robots (AMRs) and Automatic Guided Vehicles (AGVs).
