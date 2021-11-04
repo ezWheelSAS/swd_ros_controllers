@@ -7,11 +7,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(swd_ros_controllers)
 
-if(NOT DEFINED PRJ_VERSION)
-  set(PRJ_VERSION "2.0.1")
-endif(NOT DEFINED PRJ_VERSION)
-
-
 # ROS find packages ------------------------------------------------------------
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -107,32 +102,6 @@ execute_process(
   OUTPUT_VARIABLE GIT_COMMIT_HASH
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-
-string(
-  REGEX REPLACE
-  "^([\\.0-9]+).*"
-  "\\1"
-  tmp_VERSION
-  "${PRJ_VERSION}"
-)
-
-string(
-  REGEX REPLACE
-  "^([0-9]+)\\..*"
-  "\\1"
-  tmp_SOVERSION
-  "${tmp_VERSION}"
-)
-
-# Major version is for product/marketing purpose
-# Minor version is incremented everytime it gets public
-set(MAJ_MIN_VERSION ${tmp_VERSION} CACHE STRING "Major and minor version" FORCE)
-
-# Release version is incremented everytime it gets use inside the company
-set(RELEASE_VERSION ${tmp_SOVERSION} CACHE STRING "Release version" FORCE)
-
-# Build version is generated using the hash of the current commit build with
-set(BUILD_VERSION ${GIT_COMMIT_HASH} CACHE STRING "Build version" FORCE)
 
 #------------------------------------------------------------------------------
 # pkgconfig
