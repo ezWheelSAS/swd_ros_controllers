@@ -18,19 +18,12 @@
 #include <ros/ros.h>
 
 #include <tf2/LinearMath/Quaternion.h>
+#include <limits>
 
 using namespace std::chrono_literals;
 
 #define USE_SAFETY_CONTROL_WORD 0
 #define VERBOSE_OUTPUT          0
-
-// Relative errors, used to calculate the covariance matrix in the odometry message
-// Used as follow:
-// d_dist_left +/- abs(d_dist_left) * LEFT_RELATIVE_ERROR_TERM + LEFT_ADDITIVE_ERROR_TERM
-#define LEFT_RELATIVE_ERROR_TERM  0.05 // 5% of error
-#define RIGHT_RELATIVE_ERROR_TERM 0.05
-#define LEFT_ADDITIVE_ERROR_TERM  0.0
-#define RIGHT_ADDITIVE_ERROR_TERM 0.0
 
 // Default values for parameters
 #define DEFAULT_ODOM_FRAME              std::string("odom")
@@ -45,6 +38,12 @@ using namespace std::chrono_literals;
 #define DEFAULT_PUBLISH_TF              true
 #define DEFAULT_PUBLISH_SAFETY_FCNS     true
 #define DEFAULT_BACKWARD_SLS            false
+
+// Relative errors, used to calculate the covariance matrix in the odometry message
+// Used as follow:
+// d_dist_left +/- abs(d_dist_left) * LEFT_RELATIVE_ERROR
+#define DEFAULT_LEFT_RELATIVE_ERROR  0.05 // 5% of error
+#define DEFAULT_RIGHT_RELATIVE_ERROR 0.05
 
 namespace ezw
 {
@@ -66,6 +65,8 @@ namespace ezw
             m_publish_tf                        = m_nh->param("publish_tf", DEFAULT_PUBLISH_TF);
             m_publish_safety                    = m_nh->param("publish_safety_functions", DEFAULT_PUBLISH_SAFETY_FCNS);
             m_have_backward_sls                 = m_nh->param("have_backward_sls", DEFAULT_BACKWARD_SLS);
+            m_left_encoder_relative_error       = m_nh->param("left_encoder_relative_error", DEFAULT_LEFT_RELATIVE_ERROR);
+            m_right_encoder_relative_error      = m_nh->param("right_encoder_relative_error", DEFAULT_RIGHT_RELATIVE_ERROR);
             double      max_wheel_speed_rpm     = m_nh->param("wheel_max_speed_rpm", DEFAULT_MAX_WHEEL_SPEED_RPM);
             double      max_sls_wheel_speed_rpm = m_nh->param("wheel_safety_limited_speed_rpm", DEFAULT_MAX_SLS_WHEEL_RPM);
             std::string positive_polarity_wheel = m_nh->param("positive_polarity_wheel", DEFAULT_POSITIVE_POLARITY_WHEEL);
@@ -92,6 +93,16 @@ namespace ezw
                 ROS_WARN("Invalid value %d for parameter 'pub_freq_hz', it must be greater than 0."
                          "Falling back to default (%d Hz).",
                          m_pub_freq_hz, DEFAULT_PUB_FREQ_HZ);
+            }
+
+            if (std::numeric_limits<double>::epsilon() >= m_left_encoder_relative_error) {
+                m_left_encoder_relative_error = 0.001;
+                ROS_WARN("'left_encoder_relative_error' set to 0, using 0.001 to prevent null uncertainties.");
+            }
+
+            if (std::numeric_limits<double>::epsilon() >= m_right_encoder_relative_error) {
+                m_right_encoder_relative_error = 0.001;
+                ROS_WARN("'right_encoder_relative_error' set to 0, using 0.001 to prevent null uncertainties.");
             }
 
             // Publishers
@@ -414,8 +425,8 @@ namespace ezw
             double d_dist_right = static_cast<double>(right_dist_now_mm - m_dist_right_prev_mm) / 1000.0;
 
             // Error calculation (standard deviation)
-            double d_dist_left_err  = LEFT_RELATIVE_ERROR_TERM * std::abs(d_dist_left) + LEFT_ADDITIVE_ERROR_TERM;
-            double d_dist_right_err = RIGHT_RELATIVE_ERROR_TERM * std::abs(d_dist_right) + RIGHT_ADDITIVE_ERROR_TERM;
+            double d_dist_left_err  = m_left_encoder_relative_error * std::abs(d_dist_left);
+            double d_dist_right_err = m_right_encoder_relative_error * std::abs(d_dist_right);
 
             ros::Time timestamp = ros::Time::now();
 
