@@ -240,17 +240,17 @@ namespace ezw
             }
 
             // Read initial encoders values
-            err = m_left_controller.getPositionValue(m_dist_left_prev_mm);
+            err = m_left_controller.getOdometryValue(m_dist_left_prev_mm);
             if (ERROR_NONE != err) {
                 ROS_ERROR("Failed initial reading from left motor, EZW_ERR: SMCService : "
-                          "Controller::getPositionValue() return error code : %d",
+                          "Controller::getOdometryValue() return error code : %d",
                           (int)err);
             }
 
-            err = m_right_controller.getPositionValue(m_dist_right_prev_mm);
+            err = m_right_controller.getOdometryValue(m_dist_right_prev_mm);
             if (ERROR_NONE != err) {
                 ROS_ERROR("Failed initial reading from right motor, EZW_ERR: SMCService : "
-                          "Controller::getPositionValue() return error code : %d",
+                          "Controller::getOdometryValue() return error code : %d",
                           (int)err);
             }
 
@@ -403,19 +403,19 @@ namespace ezw
             int32_t     left_dist_now_mm = 0, right_dist_now_mm = 0;
             ezw_error_t err_l, err_r;
 
-            err_l = m_left_controller.getPositionValue(left_dist_now_mm);   // In mm
-            err_r = m_right_controller.getPositionValue(right_dist_now_mm); // In mm
+            err_l = m_left_controller.getOdometryValue(left_dist_now_mm);   // In mm
+            err_r = m_right_controller.getOdometryValue(right_dist_now_mm); // In mm
 
             if (ERROR_NONE != err_l) {
                 ROS_ERROR("Failed reading from left motor, EZW_ERR: SMCService : "
-                          "Controller::getPositionValue() return error code : %d",
+                          "Controller::getOdometryValue() return error code : %d",
                           (int)err_l);
                 return;
             }
 
             if (ERROR_NONE != err_r) {
                 ROS_ERROR("Failed reading from right motor, EZW_ERR: SMCService : "
-                          "Controller::getPositionValue() return error code : %d",
+                          "Controller::getOdometryValue() return error code : %d",
                           (int)err_r);
                 return;
             }
