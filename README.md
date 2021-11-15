@@ -25,13 +25,13 @@ Pre-built packages are available for ROS Noetic on Ubuntu 20.04 (for **x64_86** 
 In order to install `swd_ros_controllers`, you need to add the ez-Wheel repository to `/etc/apt/sources.list`.
 
 ```shell
-echo "deb http://51.83.77.229:8081/apt-repo focal main" | sudo tee -a /etc/apt/sources.list
+echo "deb http://packages.ez-wheel.com:8081/ubuntu focal main" | sudo tee -a /etc/apt/sources.list
 ```
 
 Then download and add the GPG key using following command:
 
 ```shell
-wget -qO - http://51.83.77.229:8081/archive.key | sudo apt-key add -
+wget -qO - http://packages.ez-wheel.com:8081/archive.key | sudo apt-key add -
 ```
 
 Now, you should be able to install the `ros-noetic-swd-ros-controllers` package using `apt`:
