@@ -28,7 +28,7 @@
 #define M_MAX(a, b)      ((a) > (b) ? (a) : (b))
 #define M_MIN(a, b)      ((a) < (b) ? (a) : (b))
 #define M_SIGN(a)        ((a) > 0 ? 1 : -1)
-#define M_BOUND_ANGLE(a) (((a) > M_PI) ? ((a) - 2. * M_PI) : (((a) < -M_PI) ? ((a) + 2. * M_PI) : (a)))
+#define M_BOUND_ANGLE(a) (((a) > M_PI) ? ((a)-2. * M_PI) : (((a) < -M_PI) ? ((a) + 2. * M_PI) : (a)))
 
 namespace ezw
 {
@@ -61,7 +61,7 @@ namespace ezw
             tf2_ros::TransformBroadcaster    m_tf2_br;
 
             // Param
-            double      m_baseline_m, m_left_wheel_diameter_m, m_right_wheel_diameter_m, m_l_motor_reduction, m_r_motor_reduction;
+            double      m_baseline_m, m_left_wheel_diameter_m, m_right_wheel_diameter_m, m_l_motor_reduction, m_r_motor_reduction, m_left_encoder_relative_error, m_right_encoder_relative_error;
             int         m_pub_freq_hz, m_watchdog_receive_ms, m_left_wheel_polarity, m_max_motor_speed_rpm, m_motor_sls_rpm;
             std::string m_odom_frame, m_base_frame, m_left_config_file, m_right_config_file;
             bool        m_have_backward_sls, m_publish_odom, m_publish_tf, m_publish_safety, m_nmt_ok, m_pds_ok;
