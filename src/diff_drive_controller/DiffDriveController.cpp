@@ -17,8 +17,8 @@
 #include <ros/duration.h>
 #include <ros/ros.h>
 
-#include <tf2/LinearMath/Quaternion.h>
 #include <limits>
+#include <tf2/LinearMath/Quaternion.h>
 
 using namespace std::chrono_literals;
 
@@ -556,6 +556,9 @@ namespace ezw
             setSpeeds(left, right);
         }
 
+#define CONF_MAX_DELTA_SPEED_SLS 140  // in rpm motor
+#define CONF_MAX_DELTA_SPEED     1000 // in rpm motor
+
         ///
         /// \brief Change robot velocity (left in rpm, right in rpm)
         ///
@@ -568,14 +571,6 @@ namespace ezw
             // Limit to the maximum allowed speed
             if (faster_wheel_speed > m_max_motor_speed_rpm) {
                 speed_limit = m_max_motor_speed_rpm;
-            }
-
-            // Impose the safety limited speed (SLS) in backward movement when the robot doesn't have backward SLS signal.
-            // For example, if it has only one forward-facing safety LiDAR, when the robot move backwards, there's no
-            // safety guarantees, hence speed is limited to SLS, otherwise, the safety limit will be decided by the
-            // presence of the SLS signal.
-            if (!m_have_backward_sls && (left_speed < 0) && (right_speed < 0) && (faster_wheel_speed > m_motor_sls_rpm)) {
-                speed_limit = m_motor_sls_rpm;
             }
 
             m_safety_msg_mtx.lock();
@@ -595,24 +590,47 @@ namespace ezw
                 // Get the ratio between the outer (faster) wheel, and the speed limit.
                 double speed_ratio = static_cast<double>(speed_limit) / static_cast<double>(faster_wheel_speed);
 
-                // Get the faster wheel
-                if (std::abs(left_speed) > std::abs(right_speed)) {
-                    // Scale right_speed
-                    right_speed = static_cast<int32_t>(static_cast<double>(right_speed) * speed_ratio);
+                // Scale right_speed
+                right_speed = static_cast<int32_t>(static_cast<double>(right_speed) * speed_ratio);
 
-                    // Limit the left_speed
-                    left_speed = M_SIGN(left_speed) * speed_limit;
-                } else {
-                    // Scale left_speed
-                    left_speed = static_cast<int32_t>(static_cast<double>(left_speed) * speed_ratio);
-
-                    // Limit the right_speed
-                    right_speed = M_SIGN(right_speed) * speed_limit;
-                }
+                // Scale left_speed
+                left_speed = static_cast<int32_t>(static_cast<double>(left_speed) * speed_ratio);
 
                 ROS_WARN("The target speed exceeds the maximum speed limit (%d rpm). "
                          "Speed set to (left, right) (%d, %d) rpm",
                          speed_limit, left_speed, right_speed);
+            }
+
+            // Get the delta wheel speed
+            int32_t delta_wheel_speed = std::abs(left_speed - right_speed);
+            int32_t delta_speed_limit = -1;
+
+            // Limit to the maximum allowed delta speed
+            if (delta_wheel_speed > CONF_MAX_DELTA_SPEED) {
+                delta_speed_limit = CONF_MAX_DELTA_SPEED;
+            }
+
+            // If SLS detected, limit to the maximum allowed delta safety limited speed (SLS)
+            if (sls_signal && (delta_wheel_speed > CONF_MAX_DELTA_SPEED_SLS)) {
+                delta_speed_limit = CONF_MAX_DELTA_SPEED_SLS;
+            }
+
+            // The left and right wheels may have different speeds.
+            // If we need to limit one of them, we need to scale the second wheel speed.
+            // This ensures a delta speed limitation without distorting the target path.
+            if (-1 != delta_speed_limit) {
+                // Get the ratio between the max allowed delta speed limit, and the current delta speed limit.
+                double delta_speed_ratio = static_cast<double>(delta_speed_limit) / static_cast<double>(delta_wheel_speed);
+
+                // Scale right_speed
+                right_speed = static_cast<int32_t>(static_cast<double>(right_speed) * delta_speed_ratio);
+
+                // Scale left_speed
+                left_speed = static_cast<int32_t>(static_cast<double>(left_speed) * delta_speed_ratio);
+
+                ROS_WARN("The target speed exceeds the maximum delta speed limit (%d rpm). "
+                         "Speed set to (left, right) (%d, %d) rpm",
+                         delta_speed_limit, left_speed, right_speed);
             }
 
             // Send the actual speed (in RPM) to left motor
