@@ -78,8 +78,8 @@ enable_testing()
 option(ENABLE_TESTS "Enable Tests" 1)
 
 # Allow Clang-tidy
-# set(CMAKE_CXX_CLANG_TIDY clang-tidy-12 --config-file=${CMAKE_SOURCE_DIR}/.clang-tidy --use-color --header-filter=${CMAKE_SOURCE_DIR}/include/)
-# set(DCMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_CLANG_TIDY clang-tidy-12 --config-file=${CMAKE_SOURCE_DIR}/.clang-tidy --use-color --header-filter=${CMAKE_SOURCE_DIR}/include/)
+set(DCMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # find_package(Doxygen)
 # option(ENABLE_DOCS "Build API documentation" ${DOXYGEN_FOUND})
@@ -142,6 +142,11 @@ endif(HAS_CONFIG)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
+
+unset(__pkg_config_checked_EZW_TYPES CACHE)
+unset(__pkg_config_checked_EZW_LOG CACHE)
+unset(__pkg_config_checked_EZW_SMC_CORE CACHE)
+unset(__pkg_config_checked_EZW_CANOPEN_SERVICE_CLIENT CACHE)
 
 # Use project pkg config
 pkg_check_modules(EZW_TYPES REQUIRED ezw-types)

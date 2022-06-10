@@ -6,13 +6,8 @@
 
 #include "diff_drive_controller/DiffDriveController.hpp"
 
-#include "ezw-smc-core/CANOpenDispatcher.hpp"
-
-#include "ezw-canopen-service/DBusClient.hpp"
-
 #include <geometry_msgs/TransformStamped.h>
 #include <nav_msgs/Odometry.h>
-
 #include <ros/console.h>
 #include <ros/duration.h>
 #include <ros/ros.h>
@@ -25,63 +20,65 @@
 using namespace std::chrono_literals;
 
 #define USE_SAFETY_CONTROL_WORD 0
-#define VERBOSE_OUTPUT          0
+#define VERBOSE_OUTPUT 0
+#define TIMER_STATE_MACHINE_MS 1000
+#define TIMER_SAFETY_MS 200
 
 // Default values for parameters
-#define DEFAULT_ODOM_FRAME              std::string("odom")
-#define DEFAULT_BASE_FRAME              std::string("base_link")
+#define DEFAULT_ODOM_FRAME std::string("odom")
+#define DEFAULT_BASE_FRAME std::string("base_link")
 #define DEFAULT_POSITIVE_POLARITY_WHEEL std::string("Right")
-#define DEFAULT_CTRL_MODE               std::string("Twist")
-#define DEFAULT_MAX_WHEEL_SPEED_RPM     75.0 // 75 rpm Wheel => Motor (75 * 14 = 1050 rpm)
-#define DEFAULT_MAX_SLS_WHEEL_RPM       30.0 // 30 rpm Wheel => Motor (30 * 14 = 490 rpm)
-#define DEFAULT_PUB_FREQ_HZ             50
-#define DEFAULT_WATCHDOG_MS             1000
-#define DEFAULT_PUBLISH_ODOM            true
-#define DEFAULT_PUBLISH_TF              true
-#define DEFAULT_PUBLISH_SAFETY_FCNS     true
-#define DEFAULT_BACKWARD_SLS            false
+#define DEFAULT_CTRL_MODE std::string("Twist")
+#define DEFAULT_MAX_WHEEL_SPEED_RPM 75.0  // 75 rpm Wheel => Motor (75 * 14 = 1050 rpm)
+#define DEFAULT_MAX_SLS_WHEEL_RPM 30.0    // 30 rpm Wheel => Motor (30 * 14 = 490 rpm)
+#define DEFAULT_PUB_FREQ_HZ 50
+#define DEFAULT_WATCHDOG_MS 1000
+#define DEFAULT_PUBLISH_ODOM true
+#define DEFAULT_PUBLISH_TF true
+#define DEFAULT_PUBLISH_SAFETY_FCNS true
+#define DEFAULT_BACKWARD_SLS false
 
 // Relative errors, used to calculate the covariance matrix in the odometry message
 // Used as follow:
 // d_dist_left +/- abs(d_dist_left) * LEFT_RELATIVE_ERROR
-#define DEFAULT_LEFT_RELATIVE_ERROR  0.05 // 5% of error
+#define DEFAULT_LEFT_RELATIVE_ERROR 0.05  // 5% of error
 #define DEFAULT_RIGHT_RELATIVE_ERROR 0.05
 
-namespace ezw
-{
-    namespace swd
-    {
-        DiffDriveController::DiffDriveController(const std::shared_ptr<ros::NodeHandle> nh) : m_nh(nh)
+namespace ezw {
+    namespace swd {
+        DiffDriveController::DiffDriveController(std::shared_ptr<ros::NodeHandle> &p_nh) : m_nh(std::move(p_nh))
         {
             ROS_INFO("Initializing swd_diff_drive_controller, node name : %s", ros::this_node::getName().c_str());
 
             // Read parameters
-            m_baseline_m                        = m_nh->param("baseline_m", 0.0);
-            m_left_config_file                  = m_nh->param("left_swd_config_file", std::string(""));
-            m_right_config_file                 = m_nh->param("right_swd_config_file", std::string(""));
-            m_pub_freq_hz                       = m_nh->param("pub_freq_hz", DEFAULT_PUB_FREQ_HZ);
-            m_watchdog_receive_ms               = m_nh->param("control_timeout_ms", DEFAULT_WATCHDOG_MS);
-            m_base_frame                        = m_nh->param("base_frame", DEFAULT_BASE_FRAME);
-            m_odom_frame                        = m_nh->param("odom_frame", DEFAULT_ODOM_FRAME);
-            m_publish_odom                      = m_nh->param("publish_odom", DEFAULT_PUBLISH_ODOM);
-            m_publish_tf                        = m_nh->param("publish_tf", DEFAULT_PUBLISH_TF);
-            m_publish_safety                    = m_nh->param("publish_safety_functions", DEFAULT_PUBLISH_SAFETY_FCNS);
-            m_have_backward_sls                 = m_nh->param("have_backward_sls", DEFAULT_BACKWARD_SLS);
-            m_left_encoder_relative_error       = m_nh->param("left_encoder_relative_error", DEFAULT_LEFT_RELATIVE_ERROR);
-            m_right_encoder_relative_error      = m_nh->param("right_encoder_relative_error", DEFAULT_RIGHT_RELATIVE_ERROR);
-            double      max_wheel_speed_rpm     = m_nh->param("wheel_max_speed_rpm", DEFAULT_MAX_WHEEL_SPEED_RPM);
-            double      max_sls_wheel_speed_rpm = m_nh->param("wheel_safety_limited_speed_rpm", DEFAULT_MAX_SLS_WHEEL_RPM);
+            m_baseline_m = m_nh->param("baseline_m", 0.0);
+            m_left_config_file = m_nh->param("left_swd_config_file", std::string(""));
+            m_right_config_file = m_nh->param("right_swd_config_file", std::string(""));
+            m_pub_freq_hz = m_nh->param("pub_freq_hz", DEFAULT_PUB_FREQ_HZ);
+            m_watchdog_receive_ms = m_nh->param("control_timeout_ms", DEFAULT_WATCHDOG_MS);
+            m_base_frame = m_nh->param("base_frame", DEFAULT_BASE_FRAME);
+            m_odom_frame = m_nh->param("odom_frame", DEFAULT_ODOM_FRAME);
+            m_publish_odom = m_nh->param("publish_odom", DEFAULT_PUBLISH_ODOM);
+            m_publish_tf = m_nh->param("publish_tf", DEFAULT_PUBLISH_TF);
+            m_publish_safety = m_nh->param("publish_safety_functions", DEFAULT_PUBLISH_SAFETY_FCNS);
+            m_have_backward_sls = m_nh->param("have_backward_sls", DEFAULT_BACKWARD_SLS);
+            m_left_encoder_relative_error = m_nh->param("left_encoder_relative_error", DEFAULT_LEFT_RELATIVE_ERROR);
+            m_right_encoder_relative_error = m_nh->param("right_encoder_relative_error", DEFAULT_RIGHT_RELATIVE_ERROR);
+            double max_wheel_speed_rpm = m_nh->param("wheel_max_speed_rpm", DEFAULT_MAX_WHEEL_SPEED_RPM);
+            double max_sls_wheel_speed_rpm = m_nh->param("wheel_safety_limited_speed_rpm", DEFAULT_MAX_SLS_WHEEL_RPM);
             std::string positive_polarity_wheel = m_nh->param("positive_polarity_wheel", DEFAULT_POSITIVE_POLARITY_WHEEL);
-            std::string ctrl_mode               = m_nh->param("control_mode", DEFAULT_CTRL_MODE);
+            std::string ctrl_mode = m_nh->param("control_mode", DEFAULT_CTRL_MODE);
 
             if ("Left" == positive_polarity_wheel) {
-                m_left_wheel_polarity = 1;
-            } else {
-                m_left_wheel_polarity = -1;
+                m_left_wheel_polarity = true;
+            }
+            else {
+                m_left_wheel_polarity = false;
                 if ("Right" != positive_polarity_wheel) {
-                    ROS_WARN("Invalid value '%s' for parameter 'positive_polarity_wheel, accepted values: ['Left' or 'Right']."
-                             "Falling back to default (%s).",
-                             positive_polarity_wheel.c_str(), DEFAULT_POSITIVE_POLARITY_WHEEL.c_str());
+                    ROS_WARN(
+                        "Invalid value '%s' for parameter 'positive_polarity_wheel, accepted values: ['Left' or 'Right']."
+                        "Falling back to default (%s).",
+                        positive_polarity_wheel.c_str(), DEFAULT_POSITIVE_POLARITY_WHEEL.c_str());
                 }
             }
 
@@ -92,9 +89,10 @@ namespace ezw
 
             if (m_pub_freq_hz <= 0) {
                 m_pub_freq_hz = DEFAULT_PUB_FREQ_HZ;
-                ROS_WARN("Invalid value %d for parameter 'pub_freq_hz', it must be greater than 0."
-                         "Falling back to default (%d Hz).",
-                         m_pub_freq_hz, DEFAULT_PUB_FREQ_HZ);
+                ROS_WARN(
+                    "Invalid value %d for parameter 'pub_freq_hz', it must be greater than 0."
+                    "Falling back to default (%d Hz).",
+                    m_pub_freq_hz, DEFAULT_PUB_FREQ_HZ);
             }
 
             if (std::numeric_limits<double>::epsilon() >= m_left_encoder_relative_error) {
@@ -121,27 +119,31 @@ namespace ezw
 
             if ("LeftRightSpeeds" == ctrl_mode) {
                 m_sub_command = m_nh->subscribe("set_speed", 5, &DiffDriveController::cbSetSpeed, this);
-            } else {
+            }
+            else {
                 m_sub_command = m_nh->subscribe("cmd_vel", 5, &DiffDriveController::cbCmdVel, this);
                 if ("Twist" != ctrl_mode) {
-                    ROS_WARN("Invalid value '%s' for parameter 'control_mode', accepted values: ['Twist' or 'LeftRightSpeeds']."
-                             "Falling back to default (%s).",
-                             ctrl_mode.c_str(), DEFAULT_CTRL_MODE.c_str());
+                    ROS_WARN(
+                        "Invalid value '%s' for parameter 'control_mode', accepted values: ['Twist' or 'LeftRightSpeeds']."
+                        "Falling back to default (%s).",
+                        ctrl_mode.c_str(), DEFAULT_CTRL_MODE.c_str());
                 }
             }
 
             if (max_wheel_speed_rpm < 0.) {
                 max_wheel_speed_rpm = DEFAULT_MAX_WHEEL_SPEED_RPM;
-                ROS_ERROR("Invalid value %f for parameter 'wheel_max_speed_rpm', it should be a positive value. "
-                          "Falling back to default (%f)",
-                          max_wheel_speed_rpm, DEFAULT_MAX_WHEEL_SPEED_RPM);
+                ROS_ERROR(
+                    "Invalid value %f for parameter 'wheel_max_speed_rpm', it should be a positive value. "
+                    "Falling back to default (%f)",
+                    max_wheel_speed_rpm, DEFAULT_MAX_WHEEL_SPEED_RPM);
             }
 
             if (max_sls_wheel_speed_rpm < 0.) {
                 max_sls_wheel_speed_rpm = DEFAULT_MAX_SLS_WHEEL_RPM;
-                ROS_ERROR("Invalid value %f for parameter 'wheel_safety_limited_speed_rpm', it should be a positive value. "
-                          "Falling back to default (%f)",
-                          max_sls_wheel_speed_rpm, DEFAULT_MAX_SLS_WHEEL_RPM);
+                ROS_ERROR(
+                    "Invalid value %f for parameter 'wheel_safety_limited_speed_rpm', it should be a positive value. "
+                    "Falling back to default (%f)",
+                    max_sls_wheel_speed_rpm, DEFAULT_MAX_SLS_WHEEL_RPM);
             }
 
             // Initialize motors
@@ -149,94 +151,104 @@ namespace ezw
 
             ezw_error_t err;
 
-            if ("" != m_right_config_file) {
+            if (!m_right_config_file.empty()) {
                 /* Config init */
-                auto lConfig = std::make_shared<ezw::smccore::Config>();
-                err          = lConfig->load(m_right_config_file);
+                auto config = std::make_shared<ezw::smccore::Config>();
+                err = config->load(m_right_config_file);
                 if (err != ERROR_NONE) {
-                    ROS_ERROR("Failed loading right motor's config file <%s>, CONTEXT_ID: %d, EZW_ERR: SMCService : "
-                              "Config.init() return error code : %d",
-                              m_right_config_file.c_str(), CON_APP, (int)err);
+                    ROS_ERROR(
+                        "Failed loading right motor's config file <%s>, CONTEXT_ID: %d, EZW_ERR: SMCService : "
+                        "Config.init() return error code : %d",
+                        m_right_config_file.c_str(), CON_APP, (int)err);
                     throw std::runtime_error("Failed loading right motor's config file");
                 }
 
-                m_right_wheel_diameter_m = lConfig->getDiameter() * 1e-3;
-                m_r_motor_reduction      = lConfig->getReduction();
+                m_right_wheel_diameter_m = config->getDiameter() * 1e-3;
+                m_r_motor_reduction = config->getReduction();
 
                 /* CANOpenService client init */
-                auto lCOSClient = std::make_shared<ezw::canopenservice::DBusClient>();
-                err             = lCOSClient->init();
+                auto cos_client = std::make_shared<ezw::canopenservice::DBusClient>();
+                err = cos_client->init();
                 if (err != ERROR_NONE) {
-                    ROS_ERROR("Failed initializing right motor, CONTEXT_ID: %d, EZW_ERR: SMCService : "
-                              "COSDBusClient::init() return error code : %d",
-                              lConfig->getContextId(), (int)err);
+                    ROS_ERROR(
+                        "Failed initializing right motor, CONTEXT_ID: %d, EZW_ERR: SMCService : "
+                        "COSDBusClient::init() return error code : %d",
+                        config->getContextId(), (int)err);
                     throw std::runtime_error("Failed initializing right motor");
                 }
 
                 /* CANOpenDispatcher */
-                auto lCANOpenDispatcher = std::make_shared<ezw::smccore::CANOpenDispatcher>(lConfig, lCOSClient);
-                err                     = lCANOpenDispatcher->init();
+                auto can_open_dispatcher = std::make_shared<ezw::smccore::CANOpenDispatcher>(config, cos_client);
+                err = can_open_dispatcher->init();
                 if (err != ERROR_NONE) {
-                    ROS_ERROR("Failed initializing right motor, CONTEXT_ID: %d, EZW_ERR: SMCService : "
-                              "CANOpenDispatcher::init() return error code : %d",
-                              lConfig->getContextId(), (int)err);
+                    ROS_ERROR(
+                        "Failed initializing right motor, CONTEXT_ID: %d, EZW_ERR: SMCService : "
+                        "CANOpenDispatcher::init() return error code : %d",
+                        config->getContextId(), (int)err);
                     throw std::runtime_error("Failed initializing right motor");
                 }
 
-                err = m_right_controller.init(lConfig, lCANOpenDispatcher);
+                err = m_right_controller.init(config, can_open_dispatcher);
                 if (ERROR_NONE != err) {
-                    ROS_ERROR("Failed initializing right motor, EZW_ERR: SMCService : "
-                              "Controller::init() return error code : %d",
-                              (int)err);
+                    ROS_ERROR(
+                        "Failed initializing right motor, EZW_ERR: SMCService : "
+                        "Controller::init() return error code : %d",
+                        (int)err);
                     throw std::runtime_error("Failed initializing right motor");
                 }
-            } else {
+            }
+            else {
                 ROS_ERROR("Please specify the 'right_swd_config_file' parameter");
                 throw std::runtime_error("Please specify the 'right_swd_config_file' parameter");
             }
 
-            if ("" != m_left_config_file) {
+            if (!m_left_config_file.empty()) {
                 /* Config init */
-                auto lConfig = std::make_shared<ezw::smccore::Config>();
-                err          = lConfig->load(m_left_config_file);
+                auto config = std::make_shared<ezw::smccore::Config>();
+                err = config->load(m_left_config_file);
                 if (err != ERROR_NONE) {
-                    ROS_ERROR("Failed loading left motor's config file <%s>, CONTEXT_ID: %d, EZW_ERR: SMCService : "
-                              "Config.init() return error code : %d",
-                              m_right_config_file.c_str(), CON_APP, (int)err);
+                    ROS_ERROR(
+                        "Failed loading left motor's config file <%s>, CONTEXT_ID: %d, EZW_ERR: SMCService : "
+                        "Config.init() return error code : %d",
+                        m_right_config_file.c_str(), CON_APP, (int)err);
                     throw std::runtime_error("Failed initializing left motor");
                 }
 
-                m_left_wheel_diameter_m = lConfig->getDiameter() * 1e-3;
-                m_l_motor_reduction     = lConfig->getReduction();
+                m_left_wheel_diameter_m = config->getDiameter() * 1e-3;
+                m_l_motor_reduction = config->getReduction();
 
                 /* CANOpenService client init */
-                auto lCOSClient = std::make_shared<ezw::canopenservice::DBusClient>();
-                err             = lCOSClient->init();
+                auto cos_client = std::make_shared<ezw::canopenservice::DBusClient>();
+                err = cos_client->init();
                 if (err != ERROR_NONE) {
-                    ROS_ERROR("Failed initializing left motor, EZW_ERR: SMCService : "
-                              "COSDBusClient::init() return error code : %d",
-                              (int)err);
+                    ROS_ERROR(
+                        "Failed initializing left motor, EZW_ERR: SMCService : "
+                        "COSDBusClient::init() return error code : %d",
+                        (int)err);
                     throw std::runtime_error("Failed initializing left motor");
                 }
 
                 /* CANOpenDispatcher */
-                auto lCANOpenDispatcher = std::make_shared<ezw::smccore::CANOpenDispatcher>(lConfig, lCOSClient);
-                err                     = lCANOpenDispatcher->init();
+                auto can_open_dispatcher = std::make_shared<ezw::smccore::CANOpenDispatcher>(config, cos_client);
+                err = can_open_dispatcher->init();
                 if (err != ERROR_NONE) {
-                    ROS_ERROR("Failed initializing left motor, EZW_ERR: SMCService : "
-                              "CANOpenDispatcher::init() return error code : %d",
-                              (int)err);
+                    ROS_ERROR(
+                        "Failed initializing left motor, EZW_ERR: SMCService : "
+                        "CANOpenDispatcher::init() return error code : %d",
+                        (int)err);
                     throw std::runtime_error("Failed initializing left motor");
                 }
 
-                err = m_left_controller.init(lConfig, lCANOpenDispatcher);
+                err = m_left_controller.init(config, can_open_dispatcher);
                 if (ERROR_NONE != err) {
-                    ROS_ERROR("Failed initializing left motor, EZW_ERR: SMCService : "
-                              "Controller::init() return error code : %d",
-                              (int)err);
+                    ROS_ERROR(
+                        "Failed initializing left motor, EZW_ERR: SMCService : "
+                        "Controller::init() return error code : %d",
+                        (int)err);
                     throw std::runtime_error("Failed initializing left motor");
                 }
-            } else {
+            }
+            else {
                 ROS_ERROR("Please specify the 'left_swd_config_file' parameter");
                 throw std::runtime_error("Please specify the 'left_swd_config_file' parameter");
             }
@@ -244,29 +256,33 @@ namespace ezw
             // Read initial encoders values
             err = m_left_controller.getOdometryValue(m_dist_left_prev_mm);
             if (ERROR_NONE != err) {
-                ROS_ERROR("Failed initial reading from left motor, EZW_ERR: SMCService : "
-                          "Controller::getOdometryValue() return error code : %d",
-                          (int)err);
+                ROS_ERROR(
+                    "Failed initial reading from left motor, EZW_ERR: SMCService : "
+                    "Controller::getOdometryValue() return error code : %d",
+                    (int)err);
             }
 
             err = m_right_controller.getOdometryValue(m_dist_right_prev_mm);
             if (ERROR_NONE != err) {
-                ROS_ERROR("Failed initial reading from right motor, EZW_ERR: SMCService : "
-                          "Controller::getOdometryValue() return error code : %d",
-                          (int)err);
+                ROS_ERROR(
+                    "Failed initial reading from right motor, EZW_ERR: SMCService : "
+                    "Controller::getOdometryValue() return error code : %d",
+                    (int)err);
             }
 
             // Set m_max_motor_speed_rpm from wheel_sls and motor_reduction
             m_max_motor_speed_rpm = static_cast<int32_t>(max_wheel_speed_rpm * m_l_motor_reduction);
-            m_motor_sls_rpm       = static_cast<int32_t>(max_sls_wheel_speed_rpm * m_l_motor_reduction);
+            m_motor_sls_rpm = static_cast<int32_t>(max_sls_wheel_speed_rpm * m_l_motor_reduction);
 
-            ROS_INFO("Got parameter 'wheel_max_speed_rpm' = %f rpm. "
-                     "Setting maximum motor speed to %d rpm",
-                     max_wheel_speed_rpm, m_max_motor_speed_rpm);
+            ROS_INFO(
+                "Got parameter 'wheel_max_speed_rpm' = %f rpm. "
+                "Setting maximum motor speed to %d rpm",
+                max_wheel_speed_rpm, m_max_motor_speed_rpm);
 
-            ROS_INFO("Got parameter 'wheel_safety_limited_speed_rpm' = %f rpm. "
-                     "Setting maximum motor safety limited speed to %d rpm",
-                     max_sls_wheel_speed_rpm, m_motor_sls_rpm);
+            ROS_INFO(
+                "Got parameter 'wheel_safety_limited_speed_rpm' = %f rpm. "
+                "Setting maximum motor safety limited speed to %d rpm",
+                max_sls_wheel_speed_rpm, m_motor_sls_rpm);
 
             // Init DBus COS client
             err = m_cos_client.init();
@@ -282,12 +298,10 @@ namespace ezw
             m_timer_pds      = m_nh->createTimer(ros::Duration(0.5), boost::bind(&DiffDriveController::cbTimerStateMachine, this));
 
             if (m_publish_odom || m_publish_tf) {
-                m_timer_odom = m_nh->createTimer(ros::Duration(1.0 / m_pub_freq_hz), boost::bind(&DiffDriveController::cbTimerOdom, this));
+                m_timer_odom = m_nh->createTimer(ros::Duration(1.0 / m_pub_freq_hz), std::bind(&DiffDriveController::cbTimerOdom, this));
             }
 
-            if (m_publish_safety) {
-                m_timer_safety = m_nh->createTimer(ros::Duration(1.0 / 5.0), boost::bind(&DiffDriveController::cbTimerSafety, this));
-            }
+            m_timer_safety = m_nh->createTimer(ros::Duration(TIMER_SAFETY_MS / 1000.0), std::bind(&DiffDriveController::cbTimerSafety, this));
 
             ROS_INFO("ez-Wheel's swd_diff_drive_controller initialized successfully!");
         }
@@ -297,7 +311,7 @@ namespace ezw
             // NMT state machine
             smccore::Controller::NMTState nmt_state_l, nmt_state_r;
             smccore::Controller::PDSState pds_state_l, pds_state_r;
-            ezw_error_t                   err_l, err_r;
+            ezw_error_t err_l, err_r;
 
             nmt_state_l = nmt_state_r = smccore::Controller::NMTState::UNKNOWN;
             pds_state_l = pds_state_r = smccore::Controller::PDSState::SWITCH_ON_DISABLED;
@@ -306,15 +320,17 @@ namespace ezw
             err_r = m_right_controller.getNMTState(nmt_state_r);
 
             if (ERROR_NONE != err_l) {
-                ROS_ERROR("Failed to get the NMT state for left motor, EZW_ERR: SMCService : "
-                          "Controller::getPDSState() return error code : %d",
-                          (int)err_l);
+                ROS_ERROR(
+                    "Failed to get the NMT state for left motor, EZW_ERR: SMCService : "
+                    "Controller::getPDSState() return error code : %d",
+                    (int)err_l);
             }
 
             if (ERROR_NONE != err_r) {
-                ROS_ERROR("Failed to get the NMT state for right motor, EZW_ERR: SMCService : "
-                          "Controller::getPDSState() return error code : %d",
-                          (int)err_r);
+                ROS_ERROR(
+                    "Failed to get the NMT state for right motor, EZW_ERR: SMCService : "
+                    "Controller::getPDSState() return error code : %d",
+                    (int)err_r);
             }
 
             if (smccore::Controller::NMTState::OPER != nmt_state_l || smccore::Controller::NMTState::OPER != nmt_state_r) {
@@ -337,6 +353,8 @@ namespace ezw
 
             m_nmt_ok = (smccore::Controller::NMTState::OPER == nmt_state_l) && (smccore::Controller::NMTState::OPER == nmt_state_r);
 
+            bool sto_signal = true;
+
             // If NMT is operational, check the PDS state
             if (m_nmt_ok) {
                 // PDS state machine
@@ -344,17 +362,27 @@ namespace ezw
                 err_r = m_right_controller.getPDSState(pds_state_r);
 
                 if (ERROR_NONE != err_l) {
-                    ROS_ERROR("Failed to get the PDS state for left motor, EZW_ERR: SMCService : "
-                              "Controller::getPDSState() return error code : %d",
-                              (int)err_l);
+                    ROS_ERROR(
+                        "Failed to get the PDS state for left motor, EZW_ERR: SMCService : "
+                        "Controller::getPDSState() return error code : %d",
+                        (int)err_l);
                 }
 
                 if (ERROR_NONE != err_r) {
-                    ROS_ERROR("Failed to get the PDS state for right motor, EZW_ERR: SMCService : "
-                              "Controller::getPDSState() return error code : %d",
-                              (int)err_r);
+                    ROS_ERROR(
+                        "Failed to get the PDS state for right motor, EZW_ERR: SMCService : "
+                        "Controller::getPDSState() return error code : %d",
+                        (int)err_r);
                 }
 
+                // Get STO signal
+                m_safety_msg_mtx.lock();
+                sto_signal = m_safety_msg.safe_torque_off != 0;
+                m_safety_msg_mtx.unlock();
+            }
+
+            // If NMT is operational and no STO detected (to avoid infinite log), check the PDS state
+            if (m_nmt_ok && !sto_signal) {
                 if (smccore::Controller::PDSState::OPERATION_ENABLED != pds_state_l) {
                     err_l = m_left_controller.enterInOperationEnabledState();
                 }
@@ -364,15 +392,17 @@ namespace ezw
                 }
 
                 if (ERROR_NONE != err_l && smccore::Controller::PDSState::OPERATION_ENABLED != pds_state_l) {
-                    ROS_ERROR("Failed to set PDS state for left motor, EZW_ERR: SMCService : "
-                              "Controller::enterInOperationEnabledState() return error code : %d",
-                              (int)err_l);
+                    ROS_ERROR(
+                        "Failed to set PDS state for left motor, EZW_ERR: SMCService : "
+                        "Controller::enterInOperationEnabledState() return error code : %d",
+                        (int)err_l);
                 }
 
                 if (ERROR_NONE != err_r && smccore::Controller::PDSState::OPERATION_ENABLED != pds_state_r) {
-                    ROS_ERROR("Failed to set PDS state for right motor, EZW_ERR: SMCService : "
-                              "Controller::enterInOperationEnabledState() return error code : %d",
-                              (int)err_r);
+                    ROS_ERROR(
+                        "Failed to set PDS state for right motor, EZW_ERR: SMCService : "
+                        "Controller::enterInOperationEnabledState() return error code : %d",
+                        (int)err_r);
                 }
             }
 
@@ -382,27 +412,29 @@ namespace ezw
                 ROS_WARN("NMT state machine is not OK.");
             }
 
-            if (!m_pds_ok) {
+            if (!m_pds_ok && !sto_signal) {
                 ROS_WARN("PDS state machine is not OK.");
             }
         }
 
-        void DiffDriveController::cbSoftBrake(const std_msgs::Bool::ConstPtr &msg)
+        void DiffDriveController::cbSoftBrake(const std_msgs::Bool::ConstPtr &p_msg)
         {
             // true => Enable brake
             // false => Release brake
-            ezw_error_t err = m_left_controller.setHalt(msg->data);
+            ezw_error_t err = m_left_controller.setHalt(p_msg->data != 0);
             if (ERROR_NONE != err) {
-                ROS_ERROR("SoftBrake: Failed %s left wheel, EZW_ERR: %d", msg->data ? "braking" : "releasing", (int)err);
-            } else {
-                ROS_INFO("SoftBrake: Left motor's soft brake %s", msg->data ? "activated" : "disabled");
+                ROS_ERROR("SoftBrake: Failed %s left wheel, EZW_ERR: %d", p_msg->data ? "braking" : "releasing", (int)err);
+            }
+            else {
+                ROS_INFO("SoftBrake: Left motor's soft brake %s", p_msg->data ? "activated" : "disabled");
             }
 
-            err = m_right_controller.setHalt(msg->data);
+            err = m_right_controller.setHalt(p_msg->data != 0);
             if (ERROR_NONE != err) {
-                ROS_ERROR("SoftBrake: Failed %s right wheel, EZW_ERR: %d", msg->data ? "braking" : "releasing", (int)err);
-            } else {
-                ROS_INFO("SoftBrake: Right motor's soft brake %s", msg->data ? "activated" : "disabled");
+                ROS_ERROR("SoftBrake: Failed %s right wheel, EZW_ERR: %d", p_msg->data ? "braking" : "releasing", (int)err);
+            }
+            else {
+                ROS_INFO("SoftBrake: Right motor's soft brake %s", p_msg->data ? "activated" : "disabled");
             }
         }
 
@@ -410,64 +442,66 @@ namespace ezw
         {
             nav_msgs::Odometry msg_odom;
 
-            int32_t     left_dist_now_mm = 0, right_dist_now_mm = 0;
+            int32_t left_dist_now_mm = 0, right_dist_now_mm = 0;
             ezw_error_t err_l, err_r;
 
-            err_l = m_left_controller.getOdometryValue(left_dist_now_mm);   // In mm
-            err_r = m_right_controller.getOdometryValue(right_dist_now_mm); // In mm
+            err_l = m_left_controller.getOdometryValue(left_dist_now_mm);    // In mm
+            err_r = m_right_controller.getOdometryValue(right_dist_now_mm);  // In mm
 
             if (ERROR_NONE != err_l) {
-                ROS_ERROR("Failed reading from left motor, EZW_ERR: SMCService : "
-                          "Controller::getOdometryValue() return error code : %d",
-                          (int)err_l);
+                ROS_ERROR(
+                    "Failed reading from left motor, EZW_ERR: SMCService : "
+                    "Controller::getOdometryValue() return error code : %d",
+                    (int)err_l);
                 return;
             }
 
             if (ERROR_NONE != err_r) {
-                ROS_ERROR("Failed reading from right motor, EZW_ERR: SMCService : "
-                          "Controller::getOdometryValue() return error code : %d",
-                          (int)err_r);
+                ROS_ERROR(
+                    "Failed reading from right motor, EZW_ERR: SMCService : "
+                    "Controller::getOdometryValue() return error code : %d",
+                    (int)err_r);
                 return;
             }
 
             // Encoder difference between t and t-1
-            double d_dist_left  = static_cast<double>(left_dist_now_mm - m_dist_left_prev_mm) / 1000.0;
+            double d_dist_left = static_cast<double>(left_dist_now_mm - m_dist_left_prev_mm) / 1000.0;
             double d_dist_right = static_cast<double>(right_dist_now_mm - m_dist_right_prev_mm) / 1000.0;
 
             // Error calculation (standard deviation)
-            double d_dist_left_err  = m_left_encoder_relative_error * std::abs(d_dist_left);
+            double d_dist_left_err = m_left_encoder_relative_error * std::abs(d_dist_left);
             double d_dist_right_err = m_right_encoder_relative_error * std::abs(d_dist_right);
 
             ros::Time timestamp = ros::Time::now();
 
             // Kinematic model
             double d_dist_center = (d_dist_left + d_dist_right) / 2.0;
-            double d_theta       = (d_dist_right - d_dist_left) / m_baseline_m;
+            double d_theta = (d_dist_right - d_dist_left) / m_baseline_m;
 
             // Error propagation (See https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Non-linear_combinations)
             double d_dist_center_err = std::sqrt(std::pow(d_dist_left_err / 2.0, 2) + std::pow(d_dist_right_err / 2.0, 2));
-            double d_theta_err       = std::sqrt(std::pow(d_dist_left_err / m_baseline_m, 2) + std::pow(d_dist_right_err / m_baseline_m, 2));
+            double d_theta_err = std::sqrt(std::pow(d_dist_left_err / m_baseline_m, 2) + std::pow(d_dist_right_err / m_baseline_m, 2));
 
             // Odometry model, integration of the diff drive kinematic model
-            double x_now     = m_x_prev + d_dist_center * std::cos(m_theta_prev);
-            double y_now     = m_y_prev + d_dist_center * std::sin(m_theta_prev);
+            double x_now = m_x_prev + d_dist_center * std::cos(m_theta_prev);
+            double y_now = m_y_prev + d_dist_center * std::sin(m_theta_prev);
             double theta_now = M_BOUND_ANGLE(m_theta_prev + d_theta);
 
             // Error propagation
-            double x_now_err     = std::sqrt(std::pow(m_x_prev_err, 2) + std::pow(std::cos(m_theta_prev) * d_dist_center_err, 2) + std::pow(-std::sin(m_theta_prev) * d_dist_center * m_theta_prev_err, 2));
-            double y_now_err     = std::sqrt(std::pow(m_y_prev_err, 2) + std::pow(std::sin(m_theta_prev) * d_dist_center_err, 2) + std::pow(std::cos(m_theta_prev) * d_dist_center * m_theta_prev_err, 2));
+            double x_now_err = std::sqrt(std::pow(m_x_prev_err, 2) + std::pow(std::cos(m_theta_prev) * d_dist_center_err, 2) + std::pow(-std::sin(m_theta_prev) * d_dist_center * m_theta_prev_err, 2));
+            double y_now_err = std::sqrt(std::pow(m_y_prev_err, 2) + std::pow(std::sin(m_theta_prev) * d_dist_center_err, 2) + std::pow(std::cos(m_theta_prev) * d_dist_center * m_theta_prev_err, 2));
             double theta_now_err = std::sqrt(std::pow(m_theta_prev_err, 2) + std::pow(d_theta_err, 2));
 
-            msg_odom.header.stamp    = timestamp;
+            msg_odom.header.stamp = timestamp;
             msg_odom.header.frame_id = m_odom_frame;
-            msg_odom.child_frame_id  = m_base_frame;
+            msg_odom.child_frame_id = m_base_frame;
 
-            msg_odom.twist                 = geometry_msgs::TwistWithCovariance();
-            msg_odom.twist.twist.linear.x  = d_dist_center * m_pub_freq_hz;
+            msg_odom.twist = geometry_msgs::TwistWithCovariance();
+            msg_odom.twist.twist.linear.x = d_dist_center * m_pub_freq_hz;
             msg_odom.twist.twist.angular.z = d_theta * m_pub_freq_hz;
 
             // Set uncertainties for linear and angular velocities (6 * 6) matrix (x y z Rx Ry Rz)
-            msg_odom.twist.covariance[0]  = std::pow(d_dist_center_err * m_pub_freq_hz, 2);
+            msg_odom.twist.covariance[0] = std::pow(d_dist_center_err * m_pub_freq_hz, 2);
             msg_odom.twist.covariance[35] = std::pow(d_theta_err * m_pub_freq_hz, 2);
 
             msg_odom.pose.pose.position.x = x_now;
@@ -482,8 +516,8 @@ namespace ezw
             msg_odom.pose.pose.orientation.w = quat_orientation.getW();
 
             // Set uncertainties for x, y, and theta (Rz)
-            msg_odom.pose.covariance[0]  = std::pow(x_now_err, 2);
-            msg_odom.pose.covariance[7]  = std::pow(y_now_err, 2);
+            msg_odom.pose.covariance[0] = std::pow(x_now_err, 2);
+            msg_odom.pose.covariance[7] = std::pow(y_now_err, 2);
             msg_odom.pose.covariance[35] = std::pow(theta_now_err, 2);
 
             if (m_publish_odom) {
@@ -492,48 +526,49 @@ namespace ezw
 
             if (m_publish_tf) {
                 geometry_msgs::TransformStamped tf_odom_baselink;
-                tf_odom_baselink.header.stamp    = timestamp;
+                tf_odom_baselink.header.stamp = timestamp;
                 tf_odom_baselink.header.frame_id = m_odom_frame;
-                tf_odom_baselink.child_frame_id  = m_base_frame;
+                tf_odom_baselink.child_frame_id = m_base_frame;
 
                 tf_odom_baselink.transform.translation.x = msg_odom.pose.pose.position.x;
                 tf_odom_baselink.transform.translation.y = msg_odom.pose.pose.position.y;
                 tf_odom_baselink.transform.translation.z = msg_odom.pose.pose.position.z;
-                tf_odom_baselink.transform.rotation.x    = msg_odom.pose.pose.orientation.x;
-                tf_odom_baselink.transform.rotation.y    = msg_odom.pose.pose.orientation.y;
-                tf_odom_baselink.transform.rotation.z    = msg_odom.pose.pose.orientation.z;
-                tf_odom_baselink.transform.rotation.w    = msg_odom.pose.pose.orientation.w;
+                tf_odom_baselink.transform.rotation.x = msg_odom.pose.pose.orientation.x;
+                tf_odom_baselink.transform.rotation.y = msg_odom.pose.pose.orientation.y;
+                tf_odom_baselink.transform.rotation.z = msg_odom.pose.pose.orientation.z;
+                tf_odom_baselink.transform.rotation.w = msg_odom.pose.pose.orientation.w;
 
                 // Send TF
                 m_tf2_br.sendTransform(tf_odom_baselink);
             }
 
-            m_x_prev             = x_now;
-            m_y_prev             = y_now;
-            m_theta_prev         = theta_now;
-            m_x_prev_err         = x_now_err;
-            m_y_prev_err         = y_now_err;
-            m_theta_prev_err     = theta_now_err;
-            m_dist_left_prev_mm  = left_dist_now_mm;
+            m_x_prev = x_now;
+            m_y_prev = y_now;
+            m_theta_prev = theta_now;
+            m_x_prev_err = x_now_err;
+            m_y_prev_err = y_now_err;
+            m_theta_prev_err = theta_now_err;
+            m_dist_left_prev_mm = left_dist_now_mm;
             m_dist_right_prev_mm = right_dist_now_mm;
         }
 
         ///
         /// \brief Change wheel speed (msg.x = left wheel, msg.y = right wheel) [rad/s]
         ///
-        void DiffDriveController::cbSetSpeed(const geometry_msgs::PointConstPtr &speed)
+        void DiffDriveController::cbSetSpeed(const geometry_msgs::PointConstPtr &p_speed)
         {
             m_timer_watchdog.stop();
             m_timer_watchdog.start();
 
             // Convert rad/s wheel speed to rpm motor speed
-            int32_t left  = static_cast<int32_t>(speed->x * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
-            int32_t right = static_cast<int32_t>(speed->y * m_r_motor_reduction * 60.0 / (2.0 * M_PI));
+            auto left = static_cast<int32_t>(p_speed->x * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
+            auto right = static_cast<int32_t>(p_speed->y * m_r_motor_reduction * 60.0 / (2.0 * M_PI));
 
 #if VERBOSE_OUTPUT
-            ROS_INFO("Got RightLeftSpeeds command: (left, right) = (%f, %f) rad/s. "
-                     "Calculated speeds (left, right) = (%d, %d) rpm",
-                     speed->x, speed->y, left, right);
+            ROS_INFO(
+                "Got RightLeftSpeeds command: (left, right) = (%f, %f) rad/s. "
+                "Calculated speeds (left, right) = (%d, %d) rpm",
+                p_speed->x, p_speed->y, left, right);
 #endif
 
             setSpeeds(left, right);
@@ -542,7 +577,7 @@ namespace ezw
         ///
         /// \brief Change robot velocity (linear [m/s], angular [rad/s])
         ///
-        void DiffDriveController::cbCmdVel(const geometry_msgs::TwistPtr &cmd_vel)
+        void DiffDriveController::cbCmdVel(const geometry_msgs::TwistPtr &p_cmd_vel)
         {
             m_timer_watchdog.stop();
             m_timer_watchdog.start();
@@ -550,17 +585,18 @@ namespace ezw
             double left_vel, right_vel;
 
             // Control model (diff drive)
-            left_vel  = (2. * cmd_vel->linear.x - cmd_vel->angular.z * m_baseline_m) / m_left_wheel_diameter_m;
-            right_vel = (2. * cmd_vel->linear.x + cmd_vel->angular.z * m_baseline_m) / m_right_wheel_diameter_m;
+            left_vel = (2. * p_cmd_vel->linear.x - p_cmd_vel->angular.z * m_baseline_m) / m_left_wheel_diameter_m;
+            right_vel = (2. * p_cmd_vel->linear.x + p_cmd_vel->angular.z * m_baseline_m) / m_right_wheel_diameter_m;
 
             // Convert rad/s wheel speed to rpm motor speed
-            int32_t left  = static_cast<int32_t>(left_vel * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
-            int32_t right = static_cast<int32_t>(right_vel * m_r_motor_reduction * 60.0 / (2.0 * M_PI));
+            auto left = static_cast<int32_t>(left_vel * m_l_motor_reduction * 60.0 / (2.0 * M_PI));
+            auto right = static_cast<int32_t>(right_vel * m_r_motor_reduction * 60.0 / (2.0 * M_PI));
 
 #if VERBOSE_OUTPUT
-            ROS_INFO("Got Twist command: linear = %f m/s, angular = %f rad/s. "
-                     "Calculated speeds (left, right) = (%d, %d) rpm",
-                     cmd_vel->linear.x, cmd_vel->angular.z, left, right);
+            ROS_INFO(
+                "Got Twist command: linear = %f m/s, angular = %f rad/s. "
+                "Calculated speeds (left, right) = (%d, %d) rpm",
+                p_cmd_vel->linear.x, p_cmd_vel->angular.z, left, right);
 #endif
 
             setSpeeds(left, right);
@@ -572,11 +608,11 @@ namespace ezw
         ///
         /// \brief Change robot velocity (left in rpm, right in rpm)
         ///
-        void DiffDriveController::setSpeeds(int32_t left_speed, int32_t right_speed)
+        void DiffDriveController::setSpeeds(int32_t p_left_speed, int32_t p_right_speed)
         {
             // Get the outer wheel speed
-            int32_t faster_wheel_speed = M_MAX(std::abs(left_speed), std::abs(right_speed));
-            int32_t speed_limit        = -1;
+            int32_t faster_wheel_speed = M_MAX(std::abs(p_left_speed), std::abs(p_right_speed));
+            int32_t speed_limit = -1;
 
             // Limit to the maximum allowed speed
             if (faster_wheel_speed > m_max_motor_speed_rpm) {
@@ -584,7 +620,7 @@ namespace ezw
             }
 
             m_safety_msg_mtx.lock();
-            bool sls_signal = m_safety_msg.safety_limited_speed;
+            bool sls_signal = (m_safety_msg.safety_limited_speed != 0);
             m_safety_msg_mtx.unlock();
 
             // If SLS detected, impose the safety limited speed (SLS)
@@ -644,20 +680,22 @@ namespace ezw
             }
 
             // Send the actual speed (in RPM) to left motor
-            ezw_error_t err = m_left_controller.setTargetVelocity(left_speed);
+            ezw_error_t err = m_left_controller.setTargetVelocity(static_cast<int16_t>(p_left_speed));
             if (ERROR_NONE != err) {
-                ROS_ERROR("Failed setting velocity of right motor, EZW_ERR: SMCService : "
-                          "Controller::setTargetVelocity() return error code : %d",
-                          (int)err);
+                ROS_ERROR(
+                    "Failed setting velocity of right motor, EZW_ERR: SMCService : "
+                    "Controller::setTargetVelocity() return error code : %d",
+                    (int)err);
                 return;
             }
 
             // Send the actual speed (in RPM) to left motor
-            err = m_right_controller.setTargetVelocity(right_speed);
+            err = m_right_controller.setTargetVelocity(static_cast<int16_t>(p_right_speed));
             if (ERROR_NONE != err) {
-                ROS_ERROR("Failed setting velocity of right motor, EZW_ERR: SMCService : "
-                          "Controller::setTargetVelocity() return error code : %d",
-                          (int)err);
+                ROS_ERROR(
+                    "Failed setting velocity of right motor, EZW_ERR: SMCService : "
+                    "Controller::setTargetVelocity() return error code : %d",
+                    (int)err);
                 return;
             }
 
@@ -669,44 +707,49 @@ namespace ezw
         void DiffDriveController::cbTimerSafety()
         {
             swd_ros_controllers::SafetyFunctions msg;
-            ezw_error_t                          err;
-            bool                                 res_l, res_r;
+            ezw_error_t err;
+            bool res_l, res_r;
 
 #if USE_SAFETY_CONTROL_WORD
             ezw::smccore::Controller::SafetyWordType res;
 
             err = m_left_controller.getSafetyControlWord(ezw::smccore::Controller::SafetyControlWordId::SAFEIN_1, res);
 
-            msg.safe_torque_off                   = res.safety_function_2 && res.safety_function_3;
+            msg.safe_torque_off = res.safety_function_2 && res.safety_function_3;
+            // TODO(GME) Add an equivalent value for msg.safe_direction_indication_backward
             msg.safe_direction_indication_forward = res.safety_function_2 && res.safety_function_3;
-            msg.safety_limited_speed              = res.safety_function_4 && res.safety_function_5;
+            msg.safety_limited_speed = res.safety_function_4 && res.safety_function_5;
 
 #if VERBOSE_OUTPUT
-            ROS_INFO("STO: %d, SDI+: %d, SLS: %d", msg.safe_torque_off, msg.safe_direction_indication_forward, msg.safety_limited_speed);
+            ROS_INFO("STO: %d, SDI+: %d, SDI-: %d, SLS: %d", msg.safe_torque_off, msg.safe_direction_indication_forward, msg.safe_direction_indication_backward, msg.safety_limited_speed);
 #endif
 
-            m_pub_safety.publish(msg);
+            if (m_publish_safety) {
+                m_pub_safety.publish(msg);
+            }
 #else
             if (m_nmt_ok) {
-                msg.header.stamp    = ros::Time::now();
+                msg.header.stamp = ros::Time::now();
                 msg.header.frame_id = m_base_frame;
 
                 // Reading SBC
                 err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SBC_1, res_l);
                 if (ERROR_NONE != err) {
-                    ROS_ERROR("Error reading SBC from left motor, EZW_ERR: SMCService : "
-                              "Controller::getSafetyFunctionCommand() return error code : %d",
-                              (int)err);
+                    ROS_ERROR(
+                        "Error reading SBC from left motor, EZW_ERR: SMCService : "
+                        "Controller::getSafetyFunctionCommand() return error code : %d",
+                        (int)err);
                 }
 
                 err = m_right_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SBC_1, res_r);
                 if (ERROR_NONE != err) {
-                    ROS_ERROR("Error reading SBC from right motor, EZW_ERR: SMCService : "
-                              "Controller::getSafetyFunctionCommand() return error code : %d",
-                              (int)err);
+                    ROS_ERROR(
+                        "Error reading SBC from right motor, EZW_ERR: SMCService : "
+                        "Controller::getSafetyFunctionCommand() return error code : %d",
+                        (int)err);
                 }
 
-                msg.safe_brake_control = !(res_l || res_r);
+                msg.safe_brake_control = static_cast<uint8_t>(!(res_l || res_r));
 
                 if (res_l != res_r) {
                     ROS_ERROR("Inconsistant SBC for left and right motors, left=%d, right=%d.", res_l, res_r);
@@ -715,19 +758,21 @@ namespace ezw
                 // Reading STO
                 err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::STO, res_l);
                 if (ERROR_NONE != err) {
-                    ROS_ERROR("Error reading STO from left motor, EZW_ERR: SMCService : "
-                              "Controller::getSafetyFunctionCommand() return error code : %d",
-                              (int)err);
+                    ROS_ERROR(
+                        "Error reading STO from left motor, EZW_ERR: SMCService : "
+                        "Controller::getSafetyFunctionCommand() return error code : %d",
+                        (int)err);
                 }
 
                 err = m_right_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::STO, res_r);
                 if (ERROR_NONE != err) {
-                    ROS_ERROR("Error reading STO from right motor, EZW_ERR: SMCService : "
-                              "Controller::getSafetyFunctionCommand() return error code : %d",
-                              (int)err);
+                    ROS_ERROR(
+                        "Error reading STO from right motor, EZW_ERR: SMCService : "
+                        "Controller::getSafetyFunctionCommand() return error code : %d",
+                        (int)err);
                 }
 
-                msg.safe_torque_off = !(res_l || res_r);
+                msg.safe_torque_off = static_cast<uint8_t>(!(res_l || res_r));
 
                 if (res_l != res_r) {
                     ROS_ERROR("Inconsistant STO for left and right motors, left=%d, right=%d.", res_l, res_r);
@@ -738,82 +783,92 @@ namespace ezw
 
                 err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SDIP_1, sdi_l_p);
                 if (ERROR_NONE != err) {
-                    ROS_ERROR("Error reading SDI+ from left motor, EZW_ERR: SMCService : "
-                              "Controller::getSafetyFunctionCommand() return error code : %d",
-                              (int)err);
+                    ROS_ERROR(
+                        "Error reading SDI+ from left motor, EZW_ERR: SMCService : "
+                        "Controller::getSafetyFunctionCommand() return error code : %d",
+                        (int)err);
                 }
 
                 err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SDIN_1, sdi_l_n);
                 if (ERROR_NONE != err) {
-                    ROS_ERROR("Error reading SDI- from left motor, EZW_ERR: SMCService : "
-                              "Controller::getSafetyFunctionCommand() return error code : %d",
-                              (int)err);
+                    ROS_ERROR(
+                        "Error reading SDI- from left motor, EZW_ERR: SMCService : "
+                        "Controller::getSafetyFunctionCommand() return error code : %d",
+                        (int)err);
                 }
 
                 err = m_right_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SDIP_1, sdi_r_p);
                 if (ERROR_NONE != err) {
-                    ROS_ERROR("Error reading SDI+ from right motor, EZW_ERR: SMCService : "
-                              "Controller::getSafetyFunctionCommand() return error code : %d",
-                              (int)err);
+                    ROS_ERROR(
+                        "Error reading SDI+ from right motor, EZW_ERR: SMCService : "
+                        "Controller::getSafetyFunctionCommand() return error code : %d",
+                        (int)err);
                 }
 
                 err = m_right_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SDIN_1, sdi_r_n);
                 if (ERROR_NONE != err) {
-                    ROS_ERROR("Error reading SDI- from right motor, EZW_ERR: SMCService : "
-                              "Controller::getSafetyFunctionCommand() return error code : %d",
-                              (int)err);
+                    ROS_ERROR(
+                        "Error reading SDI- from right motor, EZW_ERR: SMCService : "
+                        "Controller::getSafetyFunctionCommand() return error code : %d",
+                        (int)err);
                 }
 
-                if (m_left_wheel_polarity == 1) {
+                if (m_left_wheel_polarity) {
                     sdi_p = !(sdi_l_p || sdi_r_n);
                     sdi_n = !(sdi_l_n || sdi_r_p);
-                } else {
+                }
+                else {
                     sdi_p = !(sdi_l_n || sdi_r_p);
                     sdi_n = !(sdi_l_p || sdi_r_n);
                 }
 
-                msg.safe_direction_indication_forward  = sdi_p;
-                msg.safe_direction_indication_backward = sdi_n;
+                msg.safe_direction_indication_forward = static_cast<uint8_t>(sdi_p);
+                msg.safe_direction_indication_backward = static_cast<uint8_t>(sdi_n);
 
                 // Reading SLS
                 err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SLS_1, res_l);
                 if (ERROR_NONE != err) {
-                    ROS_ERROR("Error reading SLS from left motor, EZW_ERR: SMCService : "
-                              "Controller::getSafetyFunctionCommand() return error code : %d",
-                              (int)err);
+                    ROS_ERROR(
+                        "Error reading SLS from left motor, EZW_ERR: SMCService : "
+                        "Controller::getSafetyFunctionCommand() return error code : %d",
+                        (int)err);
                 }
 
                 err = m_right_controller.getSafetyFunctionCommand(ezw::smccore::Controller::SafetyFunctionId::SLS_1, res_r);
                 if (ERROR_NONE != err) {
-                    ROS_ERROR("Error reading SLS from right motor, EZW_ERR: SMCService : "
-                              "Controller::getSafetyFunctionCommand() return error code : %d",
-                              (int)err);
+                    ROS_ERROR(
+                        "Error reading SLS from right motor, EZW_ERR: SMCService : "
+                        "Controller::getSafetyFunctionCommand() return error code : %d",
+                        (int)err);
                 }
 
-                msg.safety_limited_speed = !(res_r || res_l);
+                msg.safety_limited_speed = static_cast<uint8_t>(!(res_r || res_l));
 
 #if VERBOSE_OUTPUT
-                ROS_INFO("STO: %d, SDI+: %d, SLS: %d", msg.safe_torque_off, msg.safe_direction_indication_forward, msg.safety_limited_speed);
+                ROS_INFO("STO: %d, SDI+: %d, SDI-: %d, SLS: %d", msg.safe_torque_off, msg.safe_direction_indication_forward, msg.safe_direction_indication_backward, msg.safety_limited_speed);
 #endif
 
                 m_safety_msg_mtx.lock();
                 m_safety_msg = msg;
                 m_safety_msg_mtx.unlock();
 
-                m_pub_safety.publish(msg);
-            } else {
+                if (m_publish_safety) {
+                    m_pub_safety.publish(msg);
+                }
+            }
+            else {
                 ROS_WARN("NMT state machine is not OK, no valid SafetyFunctions message to publish");
             }
 #endif
         }
 
         ///
-        /// \brief Callback qui s'active si aucun message de déplacement n'est reçu
-        /// depuis m_watchdog_receive_ms
+        /// \brief A safety callback which gets activated if no control message
+        /// have been received since `control_timeout_ms`
         ///
         void DiffDriveController::cbWatchdog()
         {
             setSpeeds(0, 0);
         }
-    } // namespace swd
-} // namespace ezw
+    }  // namespace swd
+}  // namespace ezw

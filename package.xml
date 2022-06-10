@@ -3,7 +3,7 @@
 
 <package format="2">
   <name>swd_ros_controllers</name>
-  <version>2.0.2</version>
+  <version>2.0.3</version>
   <description>Package which control 2 wheels in as a differential drive robot</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->

@@ -1,0 +1,50 @@
+---
+# Configure clang-tidy for this project.
+
+Checks: >
+  -*,
+  bugprone-*,
+  google-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -modernize-avoid-bind,
+  -readability-magic-numbers,
+  -readability-function-cognitive-complexity,
+  -readability-isolate-declaration,
+
+# Turn all the warnings from the checks above into errors.
+#WarningsAsErrors: "*"
+
+HeaderFilterRegex: ''
+
+CheckOptions:
+  # type names
+  - key:             readability-identifier-naming.ClassCase
+    value:           CamelCase
+  - key:             readability-identifier-naming.EnumCase
+    value:           CamelCase
+  - key:             readability-identifier-naming.UnionCase
+    value:           CamelCase
+  # method names
+  - key:             readability-identifier-naming.MethodCase
+    value:           camelBack
+  # variable names
+  - key:             readability-identifier-naming.VariableCase
+    value:           lower_case
+  - key:             readability-identifier-naming.ClassMemberPrefix
+    value:           m_
+  - key:             readability-identifier-naming.ParameterPrefix
+    value:           p_
+  # enum
+  - key:             readability-identifier-naming.EnumConstantCase
+    value:           CamelCase
+  # const static or global variables are UPPER_CASE
+  - key:             readability-identifier-naming.StaticConstantCase
+    value:           UPPER_CASE
+  - key:             readability-identifier-naming.ClassConstantCase
+    value:           UPPER_CASE
+  - key:             readability-identifier-naming.GlobalVariableCase
+    value:           UPPER_CASE
