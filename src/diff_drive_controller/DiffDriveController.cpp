@@ -11,11 +11,12 @@
 #include <ros/console.h>
 #include <ros/duration.h>
 #include <ros/ros.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <unistd.h>
 
 #include <limits>
-#include <tf2/LinearMath/Quaternion.h>
 
-#include <unistd.h>
+#include "ezw-smc-core/CANOpenDispatcher.hpp"
 
 using namespace std::chrono_literals;
 
@@ -287,15 +288,16 @@ namespace ezw {
             // Init DBus COS client
             err = m_cos_client.init();
             if (ERROR_NONE != err) {
-                ROS_ERROR("Failed initializing COS client : "
-                          "ezw::canopenservice::DBusClient::init() return error code : %d",
-                          (int)err);
+                ROS_ERROR(
+                    "Failed initializing COS client : "
+                    "ezw::canopenservice::DBusClient::init() return error code : %d",
+                    (int)err);
                 throw std::runtime_error("Failed initializing COS client");
             }
 
             // Create timers
             m_timer_watchdog = m_nh->createTimer(ros::Duration(m_watchdog_receive_ms / 1000.0), boost::bind(&DiffDriveController::cbWatchdog, this));
-            m_timer_pds      = m_nh->createTimer(ros::Duration(0.5), boost::bind(&DiffDriveController::cbTimerStateMachine, this));
+            m_timer_pds = m_nh->createTimer(ros::Duration(0.5), boost::bind(&DiffDriveController::cbTimerStateMachine, this));
 
             if (m_publish_odom || m_publish_tf) {
                 m_timer_odom = m_nh->createTimer(ros::Duration(1.0 / m_pub_freq_hz), std::bind(&DiffDriveController::cbTimerOdom, this));
@@ -337,16 +339,19 @@ namespace ezw {
                 // NodeId = 0 => broadcast to all canopen nodes
                 int err = m_cos_client.setNmtState(0, ezw_nmt_command_t::EZW_CO_NMT_COMMAND_PREOP);
                 if (ERROR_NONE != err) {
-                    ROS_ERROR("Failed to broadcast NMT state EZW_CO_NMT_COMMAND_RESET_COMM"
-                              "ezw::canopenservice::DBusClient::setNMTState() return error code : %d",
-                              (int)err);
-                } else {
+                    ROS_ERROR(
+                        "Failed to broadcast NMT state EZW_CO_NMT_COMMAND_RESET_COMM"
+                        "ezw::canopenservice::DBusClient::setNMTState() return error code : %d",
+                        (int)err);
+                }
+                else {
                     usleep((10) * 1000);
                     err = m_cos_client.setNmtState(0, ezw_nmt_command_t::EZW_CO_NMT_COMMAND_OPER);
                     if (ERROR_NONE != err) {
-                        ROS_ERROR("Failed to broadcast NMT state OPER"
-                                  "ezw::canopenservice::DBusClient::setNMTState() return error code : %d",
-                                  (int)err);
+                        ROS_ERROR(
+                            "Failed to broadcast NMT state OPER"
+                            "ezw::canopenservice::DBusClient::setNMTState() return error code : %d",
+                            (int)err);
                     }
                 }
             }
@@ -603,13 +608,15 @@ namespace ezw {
         }
 
 #define CONF_MAX_DELTA_SPEED_SLS 140  // in rpm motor
-#define CONF_MAX_DELTA_SPEED     1000 // in rpm motor
+#define CONF_MAX_DELTA_SPEED 1000     // in rpm motor
 
         ///
         /// \brief Change robot velocity (left in rpm, right in rpm)
         ///
         void DiffDriveController::setSpeeds(int32_t p_left_speed, int32_t p_right_speed)
         {
+            ezw_error_t err = ERROR_NONE;
+
             // Get the outer wheel speed
             int32_t faster_wheel_speed = M_MAX(std::abs(p_left_speed), std::abs(p_right_speed));
             int32_t speed_limit = -1;
@@ -619,9 +626,25 @@ namespace ezw {
                 speed_limit = m_max_motor_speed_rpm;
             }
 
-            m_safety_msg_mtx.lock();
-            bool sls_signal = (m_safety_msg.safety_limited_speed != 0);
-            m_safety_msg_mtx.unlock();
+            // Reading SLS
+            bool res_l, res_r;
+            err = m_left_controller.getSafetyFunctionCommand(ezw::smccore::ISafeMotionService::SafetyFunctionId::SLS_1, res_l);
+            if (ERROR_NONE != err) {
+                ROS_ERROR(
+                    "Error reading SLS from left motor, EZW_ERR: SMCService : "
+                    "Controller::getSafetyFunctionCommand() return error code : %d",
+                    (int)err);
+            }
+
+            err = m_right_controller.getSafetyFunctionCommand(ezw::smccore::ISafeMotionService::SafetyFunctionId::SLS_1, res_r);
+            if (ERROR_NONE != err) {
+                ROS_ERROR(
+                    "Error reading SLS from right motor, EZW_ERR: SMCService : "
+                    "Controller::getSafetyFunctionCommand() return error code : %d",
+                    (int)err);
+            }
+
+            bool sls_signal = !(res_l || res_r);
 
             // If SLS detected, impose the safety limited speed (SLS)
             if (sls_signal && (faster_wheel_speed > m_motor_sls_rpm)) {
@@ -637,18 +660,19 @@ namespace ezw {
                 double speed_ratio = static_cast<double>(speed_limit) / static_cast<double>(faster_wheel_speed);
 
                 // Scale right_speed
-                right_speed = static_cast<int32_t>(static_cast<double>(right_speed) * speed_ratio);
+                p_right_speed = static_cast<int32_t>(static_cast<double>(p_right_speed) * speed_ratio);
 
                 // Scale left_speed
-                left_speed = static_cast<int32_t>(static_cast<double>(left_speed) * speed_ratio);
+                p_left_speed = static_cast<int32_t>(static_cast<double>(p_left_speed) * speed_ratio);
 
-                ROS_WARN("The target speed exceeds the maximum speed limit (%d rpm). "
-                         "Speed set to (left, right) (%d, %d) rpm",
-                         speed_limit, left_speed, right_speed);
+                ROS_WARN(
+                    "The target speed exceeds the maximum speed limit (%d rpm). "
+                    "Speed set to (left, right) (%d, %d) rpm",
+                    speed_limit, p_left_speed, p_right_speed);
             }
 
             // Get the delta wheel speed
-            int32_t delta_wheel_speed = std::abs(left_speed - right_speed);
+            int32_t delta_wheel_speed = std::abs(p_left_speed - p_right_speed);
             int32_t delta_speed_limit = -1;
 
             // Limit to the maximum allowed delta speed
@@ -669,18 +693,19 @@ namespace ezw {
                 double delta_speed_ratio = static_cast<double>(delta_speed_limit) / static_cast<double>(delta_wheel_speed);
 
                 // Scale right_speed
-                right_speed = static_cast<int32_t>(static_cast<double>(right_speed) * delta_speed_ratio);
+                p_right_speed = static_cast<int32_t>(static_cast<double>(p_right_speed) * delta_speed_ratio);
 
                 // Scale left_speed
-                left_speed = static_cast<int32_t>(static_cast<double>(left_speed) * delta_speed_ratio);
+                p_left_speed = static_cast<int32_t>(static_cast<double>(p_left_speed) * delta_speed_ratio);
 
-                ROS_WARN("The target speed exceeds the maximum delta speed limit (%d rpm). "
-                         "Speed set to (left, right) (%d, %d) rpm",
-                         delta_speed_limit, left_speed, right_speed);
+                ROS_WARN(
+                    "The target speed exceeds the maximum delta speed limit (%d rpm). "
+                    "Speed set to (left, right) (%d, %d) rpm",
+                    delta_speed_limit, p_left_speed, p_right_speed);
             }
 
             // Send the actual speed (in RPM) to left motor
-            ezw_error_t err = m_left_controller.setTargetVelocity(static_cast<int16_t>(p_left_speed));
+            err = m_left_controller.setTargetVelocity(static_cast<int16_t>(p_left_speed));
             if (ERROR_NONE != err) {
                 ROS_ERROR(
                     "Failed setting velocity of right motor, EZW_ERR: SMCService : "
