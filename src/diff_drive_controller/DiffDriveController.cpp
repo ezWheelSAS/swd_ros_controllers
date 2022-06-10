@@ -20,6 +20,8 @@
 #include <limits>
 #include <tf2/LinearMath/Quaternion.h>
 
+#include <unistd.h>
+
 using namespace std::chrono_literals;
 
 #define USE_SAFETY_CONTROL_WORD 0
@@ -266,8 +268,18 @@ namespace ezw
                      "Setting maximum motor safety limited speed to %d rpm",
                      max_sls_wheel_speed_rpm, m_motor_sls_rpm);
 
+            // Init DBus COS client
+            err = m_cos_client.init();
+            if (ERROR_NONE != err) {
+                ROS_ERROR("Failed initializing COS client : "
+                          "ezw::canopenservice::DBusClient::init() return error code : %d",
+                          (int)err);
+                throw std::runtime_error("Failed initializing COS client");
+            }
+
+            // Create timers
             m_timer_watchdog = m_nh->createTimer(ros::Duration(m_watchdog_receive_ms / 1000.0), boost::bind(&DiffDriveController::cbWatchdog, this));
-            m_timer_pds      = m_nh->createTimer(ros::Duration(1.0), boost::bind(&DiffDriveController::cbTimerStateMachine, this));
+            m_timer_pds      = m_nh->createTimer(ros::Duration(0.5), boost::bind(&DiffDriveController::cbTimerStateMachine, this));
 
             if (m_publish_odom || m_publish_tf) {
                 m_timer_odom = m_nh->createTimer(ros::Duration(1.0 / m_pub_freq_hz), boost::bind(&DiffDriveController::cbTimerOdom, this));
@@ -305,24 +317,22 @@ namespace ezw
                           (int)err_r);
             }
 
-            if (smccore::Controller::NMTState::OPER != nmt_state_l) {
-                err_l = m_left_controller.setNMTState(smccore::Controller::NMTCommand::OPER);
-            }
-
-            if (smccore::Controller::NMTState::OPER != nmt_state_r) {
-                err_r = m_right_controller.setNMTState(smccore::Controller::NMTCommand::OPER);
-            }
-
-            if (ERROR_NONE != err_l && smccore::Controller::NMTState::OPER != nmt_state_l) {
-                ROS_ERROR("Failed to set NMT state for left motor, EZW_ERR: SMCService : "
-                          "Controller::setNMTState() return error code : %d",
-                          (int)err_l);
-            }
-
-            if (ERROR_NONE != err_r && smccore::Controller::NMTState::OPER != nmt_state_r) {
-                ROS_ERROR("Failed to set NMT state for right motor, EZW_ERR: SMCService : "
-                          "Controller::setNMTState() return error code : %d",
-                          (int)err_r);
+            if (smccore::Controller::NMTState::OPER != nmt_state_l || smccore::Controller::NMTState::OPER != nmt_state_r) {
+                // NodeId = 0 => broadcast to all canopen nodes
+                int err = m_cos_client.setNmtState(0, ezw_nmt_command_t::EZW_CO_NMT_COMMAND_PREOP);
+                if (ERROR_NONE != err) {
+                    ROS_ERROR("Failed to broadcast NMT state EZW_CO_NMT_COMMAND_RESET_COMM"
+                              "ezw::canopenservice::DBusClient::setNMTState() return error code : %d",
+                              (int)err);
+                } else {
+                    usleep((10) * 1000);
+                    err = m_cos_client.setNmtState(0, ezw_nmt_command_t::EZW_CO_NMT_COMMAND_OPER);
+                    if (ERROR_NONE != err) {
+                        ROS_ERROR("Failed to broadcast NMT state OPER"
+                                  "ezw::canopenservice::DBusClient::setNMTState() return error code : %d",
+                                  (int)err);
+                    }
+                }
             }
 
             m_nmt_ok = (smccore::Controller::NMTState::OPER == nmt_state_l) && (smccore::Controller::NMTState::OPER == nmt_state_r);

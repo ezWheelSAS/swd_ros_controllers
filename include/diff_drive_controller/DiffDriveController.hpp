@@ -11,6 +11,8 @@
 #include "ezw-smc-core/Config.hpp"
 #include "ezw-smc-core/Controller.hpp"
 
+#include "ezw-canopen-service/DBusClient.hpp"
+
 #include <swd_ros_controllers/SafetyFunctions.h>
 
 #include <geometry_msgs/Point.h>
@@ -66,8 +68,9 @@ namespace ezw
             std::string m_odom_frame, m_base_frame, m_left_config_file, m_right_config_file;
             bool        m_have_backward_sls, m_publish_odom, m_publish_tf, m_publish_safety, m_nmt_ok, m_pds_ok;
 
-            ros::Timer               m_timer_odom, m_timer_watchdog, m_timer_pds, m_timer_safety;
-            ezw::smccore::Controller m_left_controller, m_right_controller;
+            ros::Timer                      m_timer_odom, m_timer_watchdog, m_timer_pds, m_timer_safety;
+            ezw::smccore::Controller        m_left_controller, m_right_controller;
+            ezw::canopenservice::DBusClient m_cos_client;
 
             std::mutex                           m_safety_msg_mtx;
             swd_ros_controllers::SafetyFunctions m_safety_msg;
