@@ -12,6 +12,14 @@
 
 using namespace std::chrono_literals;
 
+extern "C"
+{
+    UNSIGNED8 get_node_id(void)
+    {
+        return 2;
+    }
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv,
