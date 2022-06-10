@@ -18,7 +18,7 @@ Pre-built packages are available for ROS Noetic on Ubuntu 20.04 (for **x64_86** 
 - Two SWD® based wheels
 - Ubuntu 20.04
 - ROS Noetic
-- `swd-services (>= 0.1.0)`
+- `swd-services (>= 0.1.3 and <0.2.0)`
 
 ### Ubuntu
 
