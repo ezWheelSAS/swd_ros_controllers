@@ -340,7 +340,7 @@ namespace ezw {
                 int err = m_cos_client.setNmtState(0, ezw_nmt_command_t::EZW_CO_NMT_COMMAND_PREOP);
                 if (ERROR_NONE != err) {
                     ROS_ERROR(
-                        "Failed to broadcast NMT state EZW_CO_NMT_COMMAND_RESET_COMM"
+                        "Failed to broadcast NMT state PREOP"
                         "ezw::canopenservice::DBusClient::setNMTState() return error code : %d",
                         (int)err);
                 }
@@ -708,13 +708,13 @@ namespace ezw {
             err = m_left_controller.setTargetVelocity(static_cast<int16_t>(p_left_speed));
             if (ERROR_NONE != err) {
                 ROS_ERROR(
-                    "Failed setting velocity of right motor, EZW_ERR: SMCService : "
+                    "Failed setting velocity of left motor, EZW_ERR: SMCService : "
                     "Controller::setTargetVelocity() return error code : %d",
                     (int)err);
                 return;
             }
 
-            // Send the actual speed (in RPM) to left motor
+            // Send the actual speed (in RPM) to right motor
             err = m_right_controller.setTargetVelocity(static_cast<int16_t>(p_right_speed));
             if (ERROR_NONE != err) {
                 ROS_ERROR(
