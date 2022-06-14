@@ -78,8 +78,8 @@ enable_testing()
 option(ENABLE_TESTS "Enable Tests" 1)
 
 # Allow Clang-tidy
-set(CMAKE_CXX_CLANG_TIDY clang-tidy-12 --config-file=${CMAKE_SOURCE_DIR}/.clang-tidy --use-color --header-filter=${CMAKE_SOURCE_DIR}/include/)
-set(DCMAKE_EXPORT_COMPILE_COMMANDS ON)
+#set(CMAKE_CXX_CLANG_TIDY clang-tidy-12 --config-file=${CMAKE_SOURCE_DIR}/.clang-tidy --use-color --header-filter=${CMAKE_SOURCE_DIR}/include/)
+#set(DCMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # find_package(Doxygen)
 # option(ENABLE_DOCS "Build API documentation" ${DOXYGEN_FOUND})
