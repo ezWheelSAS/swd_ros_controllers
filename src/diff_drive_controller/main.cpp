@@ -12,14 +12,6 @@
 
 using namespace std::chrono_literals;
 
-extern "C"
-{
-    UNSIGNED8 get_node_id(void)
-    {
-        return 2;
-    }
-}
-
 auto main(int argc, char **argv) -> int
 {
     ros::init(argc, argv, "DiffDriveController");
