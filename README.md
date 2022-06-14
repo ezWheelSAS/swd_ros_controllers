@@ -66,14 +66,14 @@ source ~/ros_ws/install/setup.bash
 The package comes with a preconfigured `.launch` file for the [SWD® Starter Kit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr):
 
 ```shell
-export LD_LIBRARY_PATH=/opt/ezw/usr/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ezw/usr/lib
 roslaunch swd_ros_controllers swd_diff_drive_controller.launch
 ```
 
 Or you can run it with a custom configuration, the minimum required parameters are:
 
 ```shell
-export LD_LIBRARY_PATH=/opt/ezw/usr/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ezw/usr/lib
 rosrun swd_ros_controllers swd_diff_drive_controller \
                            _left_swd_config_file:="/path/to/swd_left.ini" \
                            _right_swd_config_file:="/path/to/swd_right.ini" \
