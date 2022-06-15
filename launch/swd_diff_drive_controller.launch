@@ -1,41 +1,41 @@
 <?xml version="1.0"?>
 
 <launch>
-  <arg name="baseline_m"                        default="0.485" />
-  <arg name="pub_freq_hz"                       default="20" />
-  <arg name="left_swd_config_file"              default="/opt/ezw/usr/etc/ezw-smc-core/swd_left_config.ini" />
-  <arg name="right_swd_config_file"             default="/opt/ezw/usr/etc/ezw-smc-core/swd_right_config.ini" />
-  <arg name="command_timeout_ms"                default="500" />
-  <arg name="control_mode"                      default="Twist" />
-  <arg name="base_frame"                        default="base_link" />
-  <arg name="odom_frame"                        default="odom" />
-  <arg name="positive_polarity_wheel"           default="Right" />
-  <arg name="wheel_max_speed_rpm"               default="95" />
-  <arg name="wheel_safety_limited_speed_rpm"    default="40" />
-  <arg name="have_backward_sls"                 default="false" />
-  <arg name="left_encoder_relative_error"       default="0.2" />
-  <arg name="right_encoder_relative_error"      default="0.2" />
-  <arg name="publish_odom"                      default="true" />
-  <arg name="publish_tf"                        default="true" />
-  <arg name="publish_safety_functions"          default="true" />
+  <arg name="baseline_m" default="0.485" />
+  <arg name="pub_freq_hz" default="20" />
+  <arg name="left_swd_config_file" default="/opt/ezw/usr/etc/ezw-smc-core/swd_left_config.ini" />
+  <arg name="right_swd_config_file" default="/opt/ezw/usr/etc/ezw-smc-core/swd_right_config.ini" />
+  <arg name="command_timeout_ms" default="500" />
+  <arg name="control_mode" default="Twist" />
+  <arg name="base_frame" default="base_link" />
+  <arg name="odom_frame" default="odom" />
+  <arg name="wheel_max_speed_rpm" default="95" />
+  <arg name="wheel_safety_limited_speed_rpm" default="40" />
+  <arg name="have_backward_sls" default="false" />
+  <arg name="left_encoder_relative_error" default="0.2" />
+  <arg name="right_encoder_relative_error" default="0.2" />
+  <arg name="publish_odom" default="true" />
+  <arg name="publish_tf" default="true" />
+  <arg name="publish_safety_functions" default="true" />
+  <arg name="fine_odometry" default="false" />
 
   <node pkg="swd_ros_controllers" name="swd_diff_drive_controller" type="swd_diff_drive_controller" output="screen">
-    <param name="baseline_m"                            value="$(arg baseline_m)" />
-    <param name="pub_freq_hz"                           value="$(arg pub_freq_hz)" />
-    <param name="left_swd_config_file"                  value="$(arg left_swd_config_file)" />
-    <param name="right_swd_config_file"                 value="$(arg right_swd_config_file)" />
-    <param name="command_timeout_ms"                    value="$(arg command_timeout_ms)" />
-    <param name="control_mode"                          value="$(arg control_mode)" />
-    <param name="base_frame"                            value="$(arg base_frame)" />
-    <param name="odom_frame"                            value="$(arg odom_frame)" />
-    <param name="positive_polarity_wheel"               value="$(arg positive_polarity_wheel)" />
-    <param name="wheel_max_speed_rpm"                   value="$(arg wheel_max_speed_rpm)" />
-    <param name="wheel_safety_limited_speed_rpm"        value="$(arg wheel_safety_limited_speed_rpm)" />
-    <param name="have_backward_sls"                     value="$(arg have_backward_sls)" />
-    <param name="left_encoder_relative_error"           value="$(arg left_encoder_relative_error)" />
-    <param name="right_encoder_relative_error"          value="$(arg right_encoder_relative_error)" />
-    <param name="publish_odom"                          value="$(arg publish_odom)" />
-    <param name="publish_tf"                            value="$(arg publish_tf)" />
-    <param name="publish_safety_functions"              value="$(arg publish_safety_functions)" />
+    <param name="baseline_m" value="$(arg baseline_m)" />
+    <param name="pub_freq_hz" value="$(arg pub_freq_hz)" />
+    <param name="left_swd_config_file" value="$(arg left_swd_config_file)" />
+    <param name="right_swd_config_file" value="$(arg right_swd_config_file)" />
+    <param name="command_timeout_ms" value="$(arg command_timeout_ms)" />
+    <param name="control_mode" value="$(arg control_mode)" />
+    <param name="base_frame" value="$(arg base_frame)" />
+    <param name="odom_frame" value="$(arg odom_frame)" />
+    <param name="wheel_max_speed_rpm" value="$(arg wheel_max_speed_rpm)" />
+    <param name="wheel_safety_limited_speed_rpm" value="$(arg wheel_safety_limited_speed_rpm)" />
+    <param name="have_backward_sls" value="$(arg have_backward_sls)" />
+    <param name="left_encoder_relative_error" value="$(arg left_encoder_relative_error)" />
+    <param name="right_encoder_relative_error" value="$(arg right_encoder_relative_error)" />
+    <param name="publish_odom" value="$(arg publish_odom)" />
+    <param name="publish_tf" value="$(arg publish_tf)" />
+    <param name="publish_safety_functions" value="$(arg publish_safety_functions)" />
+    <param name="fine_odometry" value="$(arg fine_odometry)" />
   </node>
 </launch>

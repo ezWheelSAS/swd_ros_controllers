@@ -16,6 +16,7 @@ Pre-built packages are available for ROS Noetic on Ubuntu 20.04 (for **x64_86** 
 ### Prerequisites
 
 - Two SWD® based wheels
+- `SWD firmware` (**`> 1.0.1`**)
 - Ubuntu 20.04
 - ROS Noetic
 - `swd-services (>= 0.1.3 and <0.2.0)`
@@ -75,8 +76,6 @@ Or you can run it with a custom configuration, the minimum required parameters a
 ```shell
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ezw/usr/lib
 rosrun swd_ros_controllers swd_diff_drive_controller \
-                           _left_swd_config_file:="/path/to/swd_left.ini" \
-                           _right_swd_config_file:="/path/to/swd_right.ini" \
                            _baseline:=0.485
 ```
 
@@ -99,7 +98,6 @@ This controller drives two ez-Wheel SWD® wheels as a differential-drive robot.
 - `wheel_max_speed_rpm` of type **`double`**: Maximum allowed wheel speed (in RPM), if a target speed of one of the wheels is above this limit, the controller will limit the speed of the two wheels without changing the robot's trajectory (default `75.0`).
 - `wheel_safety_limited_speed_rpm` of type **`double`**: Wheel safety limited speed (SLS) (in RPM), if an SLS signal is detected (from a security LiDAR for example), the wheel will be limited internally to the configured SLS limit, the ROS controller uses this value to limit the target speed sent to the motor in the SLS case (default `30.0`).
 - `have_backward_sls` of type **`bool`**: Specifies if the robot have a backward SLS signal, coming for example from a back-facing security LiDAR. If an SLS signal is available for backward movements, set this to `true` to take it into account. Otherwise, set the parameter to `false`, this will limit all backward movements to the selected `wheel_safety_limited_speed_rpm` (default `false`).
-- `positive_polarity_wheel` of type **`string`**: Internal parameter, used to select which wheels is set to a positive polarity (default `'Right'`).
 - `control_mode` of type **`string`**: This parameter selects the control mode of the robot, if `'Twist'` is selected, the node will subscribe to the `~cmd_vel` topic, if `'LeftRightSpeeds'` is selected, the node subscribe to `~set_speed` (default `'Twist'`).
 - `left_encoder_relative_error` of type **`double`**: Relative error for left wheel encoder, used to calculate variances and propagate them to calculate the uncertainties in the odometry message. Each encoder acquisition **`DIFF_LEFT_ENCODER`** is modeled as: **`DIFF_LEFT_ENCODER +/- abs(left_encoder_relative_error * DIFF_LEFT_ENCODER)`** (default `0.05` corresponding to 5% of error).
 - `right_encoder_relative_error` of type **`double`**: Relative error for right wheel encoder, used to calculate variances and propagate them to calculate the uncertainties in the odometry message. Each encoder acquisition **`DIFF_RIGHT_ENCODER`** is modeled as: **`DIFF_RIGHT_ENCODER +/- abs(right_encoder_relative_error * DIFF_RIGHT_ENCODER)`** (default `0.05` corresponding to 5% of error).

@@ -2,5 +2,4 @@ common-api-3rdparty
 ezw-types
 ezwlog
 ezw-tools
-ezw-canopen-service
 ezw-smc-service

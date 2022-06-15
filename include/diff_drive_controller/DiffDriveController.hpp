@@ -7,14 +7,6 @@
 #ifndef EZW_ROSCONTROLLERS_DIFFDRIVECONTROLLER_HPP
 #define EZW_ROSCONTROLLERS_DIFFDRIVECONTROLLER_HPP
 
-/* SMC core */
-#include "ezw-smc-core/Config.hpp"
-#include "ezw-smc-core/Controller.hpp"
-
-#include "ezw-canopen-service/DBusClient.hpp"
-
-#include <swd_ros_controllers/SafetyFunctions.h>
-
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Twist.h>
 #include <ros/node_handle.h>
@@ -27,8 +19,7 @@
 #include <cmath>
 #include <mutex>
 
-#include "ezw-smc-core/Config.hpp"
-#include "ezw-smc-core/Controller.hpp"
+#include "ezw-smc-service/DBusClient.hpp"
 
 #define M_MAX(a, b) ((a) > (b) ? (a) : (b))
 #define M_MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -65,13 +56,13 @@ namespace ezw {
             // Param
             double m_baseline_m, m_left_wheel_diameter_m, m_right_wheel_diameter_m, m_l_motor_reduction, m_r_motor_reduction, m_left_encoder_relative_error, m_right_encoder_relative_error;
             int m_pub_freq_hz, m_watchdog_receive_ms, m_max_motor_speed_rpm, m_motor_sls_rpm;
-            bool m_left_wheel_polarity;
+            bool m_left_motor_polarity;
             std::string m_odom_frame, m_base_frame, m_left_config_file, m_right_config_file;
             bool m_have_backward_sls, m_publish_odom, m_publish_tf, m_publish_safety, m_nmt_ok, m_pds_ok;
+            bool m_fine_odometry;
 
-            ros::Timer                      m_timer_odom, m_timer_watchdog, m_timer_pds, m_timer_safety;
-            ezw::smccore::Controller        m_left_controller, m_right_controller;
-            ezw::canopenservice::DBusClient m_cos_client;
+            ros::Timer m_timer_odom, m_timer_watchdog, m_timer_pds, m_timer_safety;
+            ezw::smcservice::DBusClient m_left_controller, m_right_controller;
 
             std::mutex m_safety_msg_mtx;
             swd_ros_controllers::SafetyFunctions m_safety_msg;
