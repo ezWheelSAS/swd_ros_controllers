@@ -19,7 +19,7 @@ Pre-built packages are available for ROS Noetic on Ubuntu 20.04 (for **x64_86** 
 - `SWD firmware` (**`> 1.0.1`**)
 - Ubuntu 20.04
 - ROS Noetic
-- `swd-services (>= 0.1.3 and <0.2.0)`
+- `swd-services (>= 0.2.5)`
 
 ### Ubuntu
 
@@ -64,21 +64,75 @@ source ~/ros_ws/install/setup.bash
 
 ## Usage
 
-The package comes with a preconfigured `.launch` file for the [SWD® Starter Kit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr):
+The package comes with a preconfigured `.launch` files which can be started using the `roslaunch` command:
+- `swd_diff_drive_controller.launch`: sample configuration for the [SWD® Starter Kit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr) differential drive robot. To use it, run the following command:
 
 ```shell
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ezw/usr/lib
 roslaunch swd_ros_controllers swd_diff_drive_controller.launch
 ```
 
-Or you can run it with a custom configuration, the minimum required parameters are:
-
+You can always use the node with the `rosrun` command, the minimum required parameters are:
 ```shell
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ezw/usr/lib
 rosrun swd_ros_controllers swd_diff_drive_controller \
                            _baseline:=0.485
 ```
+The corresponding D-Bus services have to be started in order to use the nodes.
+Example for the [SWD® Starter Kit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr) differential drive robot:
+* ezw-dbus-user-session.service (dbus-launch > /tmp/SYSTEMCTL_dbus.id) [**OPTIONAL**]
+> export $(cat /tmp/SYSTEMCTL_dbus.id) [**OPTIONAL**]
 
+> export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ezw/usr/lib
+* ezw-swd-left.service (/opt/ezw/usr/bin/ezw-smc-service /opt/ezw/usr/etc/ezw-smc-core/swd_left_config.ini)
+* ezw-swd-right.service (/opt/ezw/usr/bin/ezw-smc-service /opt/ezw/usr/etc/ezw-smc-core/swd_right_config.ini)
+
+Example of configuration files for [SWD® Starter Kit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr) differential drive robot:
+
+swd_left_config.ini
+```
+# SMC Drive service config file
+contextId = 12
+nodeId = 4
+coreNodeId = 6
+coreNodeIsMaster = true # Slave:false Master:true
+canDevice = can0
+dbusNamespace = swd_left
+
+HWConfigurationEntry = SWD_CORE
+HWConfigurationFile = /opt/ezw/data/configuration.json
+
+CANOpenEDSFile = /opt/ezw/usr/etc/ezw-canopen-dico/swd_core.eds
+```
+
+swd_right_config.ini
+```
+# SMC Drive service config file
+contextId = 12
+nodeId = 5
+coreNodeId = 7
+coreNodeIsMaster = true # Slave:false Master:true
+canDevice = can0
+dbusNamespace = swd_right
+
+HWConfigurationEntry = SWD_CORE
+HWConfigurationFile = /opt/ezw/data/configuration.json
+
+CANOpenEDSFile = /opt/ezw/usr/etc/ezw-canopen-dico/swd_core.eds
+```
+
+configuration.json
+```
+[
+   {
+      "name": "SWD_CORE",
+      "nbStepRevolutionElec": 6,
+      "nbPolePair": 5,
+      "reduction": 14.0,
+      "diameter": 125.0
+   }
+]
+```
 ## The `swd_diff_drive_controller` node
 
 This controller drives two ez-Wheel SWD® wheels as a differential-drive robot.
@@ -101,6 +155,7 @@ This controller drives two ez-Wheel SWD® wheels as a differential-drive robot.
 - `control_mode` of type **`string`**: This parameter selects the control mode of the robot, if `'Twist'` is selected, the node will subscribe to the `~cmd_vel` topic, if `'LeftRightSpeeds'` is selected, the node subscribe to `~set_speed` (default `'Twist'`).
 - `left_encoder_relative_error` of type **`double`**: Relative error for left wheel encoder, used to calculate variances and propagate them to calculate the uncertainties in the odometry message. Each encoder acquisition **`DIFF_LEFT_ENCODER`** is modeled as: **`DIFF_LEFT_ENCODER +/- abs(left_encoder_relative_error * DIFF_LEFT_ENCODER)`** (default `0.05` corresponding to 5% of error).
 - `right_encoder_relative_error` of type **`double`**: Relative error for right wheel encoder, used to calculate variances and propagate them to calculate the uncertainties in the odometry message. Each encoder acquisition **`DIFF_RIGHT_ENCODER`** is modeled as: **`DIFF_RIGHT_ENCODER +/- abs(right_encoder_relative_error * DIFF_RIGHT_ENCODER)`** (default `0.05` corresponding to 5% of error).
+- `fine_odometry` of type **`bool`**: Use fine odometry (default `false`). See fine_odometry.md for procedure to follow.
 
 ### Subscribed Topics
 

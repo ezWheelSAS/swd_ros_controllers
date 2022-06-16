@@ -28,11 +28,6 @@ commissioning.py:
     communication_client.setTPDOMappingParameters(PDOId.PDO_3, mapping)
     check("setTPDOMappingParameters(PDOId.PDO_3)", error)
  ```
-## ROS2
+## ROS
 The latest swd_diff_drive controller on github contains a parameter to indicate which odometry shall be used: `"fine_odometry": False.`By default, this parameter is set to false in order to continue using `position_value`data and `getOdometryValue()` function.
 
-## ROS1
-Until **getFineOdometry()** is available, a possible workaround is to modif "**nbPolePair**" setting into `configuration.json` file :
-	`"nbPolePair": 60.0` instead of `"nbPolePair": 5.0`
-
-Thus, the formula used by "**getOdometryValue**" will compute the same value as   "**getFineOdometryValue**" and all transparent to the swd_diff_drive_controller node.
