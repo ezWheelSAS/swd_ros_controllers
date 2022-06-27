@@ -553,6 +553,7 @@ namespace ezw {
 
 #define CONF_MAX_DELTA_SPEED_SLS 140  // in rpm motor
 #define CONF_MAX_DELTA_SPEED 1000     // in rpm motor
+#define CONF_MIN_SPEED 40             // in rpm motor
 
         ///
         /// \brief Change robot velocity (left in rpm, right in rpm)
@@ -674,33 +675,30 @@ namespace ezw {
                     delta_speed_limit, p_left_speed, p_right_speed);
             }
 
-            int32_t lower_motor_speed = M_MIN(std::abs(p_left_speed), std::abs(p_right_speed));
-            speed_limit = -1;
+            // If not SLS detected && left minimum speed detected, impose the minimum speed
+            bool left_min_limit = !sls_signal && std::abs(p_left_speed) > 1 && std::abs(p_left_speed) <= CONF_MIN_SPEED;
 
-            // If not SLS detected && minimum speed detected, impose the minimum speed
-            if (!sls_signal && lower_motor_speed > 1.0 && lower_motor_speed <= 40.0) {
-                ROS_INFO("The target speed falls behind the minimum speed limit (%d rpm). ", lower_motor_speed);
-                speed_limit = 40.0;
-            }
+            // If not SLS detected && right minimum speed detected, impose the minimum speed
+            bool right_min_limit = !sls_signal && std::abs(p_right_speed) > 1 && std::abs(p_right_speed) <= CONF_MIN_SPEED;
 
-            // The left and right motors may have different speeds.
-            // If we need to limit one of them, we need to scale the second motor speed.
-            // This ensures a speed limitation without distorting the target path.
-            if (-1 != speed_limit) {
-                // If we enter here, we are sure that (lower_motor_speed < speed_limit).
-                // Get the ratio between the outer (lower) motor, and the speed limit.
-                double speed_ratio = static_cast<double>(speed_limit) / static_cast<double>(lower_motor_speed);
+            if (left_min_limit || right_min_limit) {
+                int32_t left_speed = p_left_speed;
+                int32_t right_speed = p_right_speed;
 
-                // Scale right speed
-                p_right_speed = static_cast<int32_t>(static_cast<double>(p_right_speed) * speed_ratio);
+                // Update left speed
+                if (left_min_limit) {
+                    p_left_speed = (p_left_speed > 0) ? CONF_MIN_SPEED : -CONF_MIN_SPEED;
+                }
 
-                // Scale left speed
-                p_left_speed = static_cast<int32_t>(static_cast<double>(p_left_speed) * speed_ratio);
+                // Update right speed
+                if (right_min_limit) {
+                    p_right_speed = (p_right_speed > 0) ? CONF_MIN_SPEED : -CONF_MIN_SPEED;
+                }
 
                 ROS_INFO(
-                    "The target speed falls behind the minimum speed limit (%d rpm). "
+                    "The target speed falls behind the minimum speed limit (left, right) (%d, %d rpm)."
                     "Set speed to (left, right) (%d, %d) rpm",
-                    speed_limit, p_left_speed, p_right_speed);
+                    left_speed, right_speed, p_left_speed, p_right_speed);
             }
 
             // If the PDS state is not OPERATION_ENABLED, we send a nil speed.
