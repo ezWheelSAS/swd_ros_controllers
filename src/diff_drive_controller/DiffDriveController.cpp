@@ -242,6 +242,9 @@ namespace ezw {
             }
             m_left_motor_polarity = polarity_parameters.velocity_polarity;
 
+            ROS_INFO(
+                "left motor polarity : %s", m_left_motor_polarity ? "True" : "False");
+
             // Set m_max_motor_speed_rpm from wheel_sls and motor_reduction
             m_max_motor_speed_rpm = static_cast<int32_t>(max_wheel_speed_rpm * m_l_motor_reduction);
             m_motor_sls_rpm = static_cast<int32_t>(max_sls_wheel_speed_rpm * m_l_motor_reduction);
@@ -834,12 +837,12 @@ namespace ezw {
             }
 
             if (m_left_motor_polarity) {
-                sdi_p = !(sdi_l_p || sdi_r_n);
-                sdi_n = !(sdi_l_n || sdi_r_p);
-            }
-            else {
                 sdi_p = !(sdi_l_n || sdi_r_p);
                 sdi_n = !(sdi_l_p || sdi_r_n);
+            }
+            else {
+                sdi_p = !(sdi_l_p || sdi_r_n);
+                sdi_n = !(sdi_l_n || sdi_r_p);
             }
 
             msg.safe_direction_indication_forward = static_cast<uint8_t>(sdi_p);
