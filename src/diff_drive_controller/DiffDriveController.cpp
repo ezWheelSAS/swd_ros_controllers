@@ -554,9 +554,9 @@ namespace ezw {
             setSpeeds(left, right);
         }
 
-#define CONF_MAX_DELTA_SPEED_SLS 140  // in rpm motor
-#define CONF_MAX_DELTA_SPEED 1000     // in rpm motor
-#define CONF_MIN_SPEED 40             // in rpm motor
+#define CONF_MAX_DELTA_SPEED_SLS (m_motor_sls_rpm / 2)    // in rpm motor
+#define CONF_MAX_DELTA_SPEED (m_max_motor_speed_rpm / 2)  // in rpm motor
+#define CONF_MIN_SPEED 40                                 // in rpm motor
 
         ///
         /// \brief Change robot velocity (left in rpm, right in rpm)
