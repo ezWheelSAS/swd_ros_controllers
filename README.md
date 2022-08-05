@@ -16,7 +16,7 @@ Pre-built packages are available for ROS Noetic on Ubuntu 20.04 (for **x64_86** 
 ### Prerequisites
 
 - Two SWD® based wheels
-- `SWD firmware` (**`> 1.0.1`**)
+- `SWD firmware` (**`>= 1.0.1`**)
 - Ubuntu 20.04
 - ROS Noetic
 - `swd-services (>= 0.2.5)`
