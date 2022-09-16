@@ -11,7 +11,7 @@ This package has been tested on ROS Melodic and Noetic, it contains ROS nodes to
 ## Installation
 
 This package has been tested on **x64_86** and **armhf** machines.
-Pre-built packages are available for ROS Noetic on Ubuntu 20.04 (for **x64_86** and **armhf**).
+Some pre-built packages are available for ROS Noetic on Ubuntu 20.04 (for **x64_86** and **armhf**).
 
 ### Prerequisites
 
