@@ -247,11 +247,14 @@ namespace ezw {
                 "left motor polarity : %s", m_left_motor_polarity ? "True" : "False");
 
             ezw::smccore::IVelocityModeService::VelocityModeParameters velocity_mode_parameters;
-            ROS_ERROR(
-                "Failed reading the left motor velocity mode parameters, EZW_ERR: SMCService : "
-                "Controller::getVelocityModeParameters() return error code : %d",
-                (int)err);
-            throw std::runtime_error("Failed reading the left motor velocity mode parameters");
+            err = m_left_controller.getVelocityModeParameters(velocity_mode_parameters);
+            if (ERROR_NONE != err) {
+                ROS_ERROR(
+                    "Failed reading the left motor velocity mode parameters, EZW_ERR: SMCService : "
+                    "Controller::getVelocityModeParameters() return error code : %d",
+                    (int)err);
+                throw std::runtime_error("Failed reading the left motor velocity mode parameters");
+            }
             m_left_min_speed_rpm = velocity_mode_parameters.vl_velocity_min_amount;
 
             ROS_INFO("min left velocity : %d rpm", m_left_min_speed_rpm);
@@ -344,7 +347,7 @@ namespace ezw {
             m_timer_safety = m_nh->createTimer(ros::Duration(TIMER_SAFETY_MS / 1000.0), std::bind(&DiffDriveController::cbTimerSafety, this));
 
             ROS_INFO("ez-Wheel's swd_diff_drive_controller initialized successfully!");
-        }
+        }  // namespace swd
 
         void DiffDriveController::cbTimerStateMachine()
         {
@@ -681,7 +684,6 @@ namespace ezw {
 
 #define CONF_MAX_DELTA_SPEED_SLS (m_motor_sls_rpm / 2)    // in rpm motor
 #define CONF_MAX_DELTA_SPEED (m_max_motor_speed_rpm / 2)  // in rpm motor
-#define CONF_MIN_SPEED 40                                 // in rpm motor
 
         ///
         /// \brief Change robot velocity (left in rpm, right in rpm)
@@ -788,11 +790,13 @@ namespace ezw {
                     delta_speed_limit, p_left_speed, p_right_speed);
             }
 
-            // If not SLS detected && left minimum speed detected, impose the minimum speed
-            bool left_min_limit = !sls_signal && std::abs(p_left_speed) > 1 && std::abs(p_left_speed) <= CONF_MIN_SPEED;
+            // If left minimum speed detected, impose the minimum speed
+            bool left_min_limit = std::abs(p_left_speed) > 1 && std::abs(p_left_speed) <= m_left_min_speed_rpm;
+            ;
 
-            // If not SLS detected && right minimum speed detected, impose the minimum speed
-            bool right_min_limit = !sls_signal && std::abs(p_right_speed) > 1 && std::abs(p_right_speed) <= CONF_MIN_SPEED;
+            // If right minimum speed detected, impose the minimum speed
+            bool right_min_limit = std::abs(p_right_speed) > 1 && std::abs(p_right_speed) <= m_right_min_speed_rpm;
+            ;
 
             if (left_min_limit || right_min_limit) {
                 int32_t left_speed = p_left_speed;
@@ -800,12 +804,12 @@ namespace ezw {
 
                 // Update left speed
                 if (left_min_limit) {
-                    p_left_speed = (p_left_speed > 0) ? CONF_MIN_SPEED : -CONF_MIN_SPEED;
+                    p_left_speed = (p_left_speed > 0) ? m_left_min_speed_rpm : -m_left_min_speed_rpm;
                 }
 
                 // Update right speed
                 if (right_min_limit) {
-                    p_right_speed = (p_right_speed > 0) ? CONF_MIN_SPEED : -CONF_MIN_SPEED;
+                    p_right_speed = (p_right_speed > 0) ? m_right_min_speed_rpm : -m_right_min_speed_rpm;
                 }
 
                 ROS_INFO(

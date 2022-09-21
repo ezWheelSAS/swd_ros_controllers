@@ -60,7 +60,8 @@ namespace ezw {
             bool m_left_motor_polarity;
             std::string m_odom_frame, m_base_frame, m_left_config_file, m_right_config_file;
             bool m_have_backward_sls, m_publish_odom, m_publish_tf, m_publish_safety, m_nmt_ok, m_pds_ok;
-            bool m_fine_odometry;
+            bool m_fine_odometry;            
+            uint32_t m_left_min_speed_rpm, m_right_min_speed_rpm = 0;
 
             ros::Timer m_timer_odom, m_timer_watchdog, m_timer_pds, m_timer_safety;
             ezw::smcservice::DBusClient m_left_controller, m_right_controller;
