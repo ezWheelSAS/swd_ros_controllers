@@ -40,7 +40,6 @@ using namespace std::chrono_literals;
 #define DEFAULT_PUBLISH_TF true
 #define DEFAULT_PUBLISH_SAFETY_FCNS true
 #define DEFAULT_BACKWARD_SLS false
-#define DEFAULT_FINE_ODOMETRY false
 
 // Relative errors, used to calculate the covariance matrix in the odometry message
 // Used as follow:
@@ -68,7 +67,6 @@ namespace ezw {
             m_have_backward_sls = m_nh->param("have_backward_sls", DEFAULT_BACKWARD_SLS);
             m_left_encoder_relative_error = m_nh->param("left_encoder_relative_error", DEFAULT_LEFT_RELATIVE_ERROR);
             m_right_encoder_relative_error = m_nh->param("right_encoder_relative_error", DEFAULT_RIGHT_RELATIVE_ERROR);
-            m_fine_odometry = m_nh->param("fine_odometry", DEFAULT_FINE_ODOMETRY);
             double max_wheel_speed_rpm = m_nh->param("wheel_max_speed_rpm", DEFAULT_MAX_WHEEL_SPEED_RPM);
             double max_sls_wheel_speed_rpm = m_nh->param("wheel_safety_limited_speed_rpm", DEFAULT_MAX_SLS_WHEEL_RPM);
             std::string ctrl_mode = m_nh->param("control_mode", DEFAULT_CTRL_MODE);
@@ -213,7 +211,7 @@ namespace ezw {
             }
 
             // Read initial encoders values
-            err = m_fine_odometry ? m_left_controller.getFineOdometryValue(m_dist_left_prev_mm) : m_left_controller.getOdometryValue(m_dist_left_prev_mm);
+            err = m_left_controller.getOdometryValue(m_dist_left_prev_mm);
             if (ERROR_NONE != err) {
                 ROS_ERROR(
                     "Failed initial reading from left motor, EZW_ERR: SMCService : "
@@ -222,7 +220,7 @@ namespace ezw {
                 throw std::runtime_error("Initial reading from left motor failed");
             }
 
-            err = m_fine_odometry ? m_right_controller.getFineOdometryValue(m_dist_right_prev_mm) : m_right_controller.getOdometryValue(m_dist_right_prev_mm);
+            err = m_right_controller.getOdometryValue(m_dist_right_prev_mm);
             if (ERROR_NONE != err) {
                 ROS_ERROR(
                     "Failed initial reading from right motor, EZW_ERR: SMCService : "
@@ -484,8 +482,8 @@ namespace ezw {
             int32_t left_dist_now_mm = 0, right_dist_now_mm = 0;
 
             ezw_error_t err_l, err_r;
-            err_l = m_fine_odometry ? m_left_controller.getFineOdometryValue(left_dist_now_mm) : m_left_controller.getOdometryValue(left_dist_now_mm);      // In mm
-            err_r = m_fine_odometry ? m_right_controller.getFineOdometryValue(right_dist_now_mm) : m_right_controller.getOdometryValue(right_dist_now_mm);  // In mm
+            err_l = m_left_controller.getOdometryValue(left_dist_now_mm);    // In mm
+            err_r = m_right_controller.getOdometryValue(right_dist_now_mm);  // In mm
 
             if (ERROR_NONE != err_l) {
                 ROS_ERROR(
