@@ -17,6 +17,7 @@
 #include <tf2_ros/transform_broadcaster.h>
 
 #include <cmath>
+#include <map>
 #include <mutex>
 
 #include "ezw-smc-service/DBusClient.hpp"
@@ -63,6 +64,8 @@ namespace ezw {
 
             ros::Timer m_timer_odom, m_timer_watchdog, m_timer_pds, m_timer_safety;
             ezw::smcservice::DBusClient m_left_controller, m_right_controller;
+
+            std::map<ezw::smccore::ISafeMotionService::SafetyFunctionId, int8_t> m_left_safety_functions, m_right_safety_functions;
 
             std::mutex m_safety_msg_mtx;
             swd_ros_controllers::SafetyFunctions m_safety_msg;
