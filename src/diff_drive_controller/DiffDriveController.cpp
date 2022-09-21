@@ -406,6 +406,16 @@ namespace ezw {
 
             // If NMT is operational, check the PDS state
             if (m_nmt_ok) {
+                // Reading STO
+                m_safety_msg_mtx.lock();
+                bool sto_signal = m_safety_msg.safe_torque_off;
+                m_safety_msg_mtx.unlock();
+
+                // If STO detected, exit
+                if (sto_signal) {
+                    return;
+                }
+
                 // PDS state machine
                 err_l = m_left_controller.getPDSState(pds_state_l);
                 err_r = m_right_controller.getPDSState(pds_state_r);
