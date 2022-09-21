@@ -552,6 +552,47 @@ namespace ezw {
 #endif
 
             setSpeeds(left, right);
+
+#if VERBOSE_OUTPUT
+            auto left_requested = left;
+            auto right_requested = right;
+
+            int32_t left_speed, right_speed;
+
+            ezw_error_t err = m_left_controller.getVelocityActualValue(left_speed);
+            if (ERROR_NONE != err) {
+                ROS_ERROR(
+                    "Failed get velocity of left motor, EZW_ERR: SMCService : "
+                    "Controller::getTargetVelocity() return error code : %d",
+                    (int)err);
+                return;
+            }
+
+            err = m_right_controller.getVelocityActualValue(right_speed);
+            if (ERROR_NONE != err) {
+                ROS_ERROR(
+                    "Failed get velocity of right motor, EZW_ERR: SMCService : "
+                    "Controller::getTargetVelocity() return error code : %d",
+                    (int)err);
+                return;
+            }
+
+            double _left_vel = 1.0 * (left_speed / m_l_motor_reduction / 60.0 * (2.0 * M_PI));
+            double _right_vel = 1.0 * (right_speed / m_l_motor_reduction / 60.0 * (2.0 * M_PI));
+
+            double x = 0.5 * ((_left_vel + _right_vel) * m_left_wheel_diameter_m / (4 * m_baseline_m));
+            double z = 1.0 * ((_right_vel - _left_vel) * m_left_wheel_diameter_m / (2 * m_baseline_m));
+
+            ROS_INFO(
+                "Twist command (linear.x_requested, angular.z_requested, linear.x_real, angular.z_real); %f;%f;%f;%f; \
+                    Calculated speeds (left_requested, right_requested, left_send, right_send); \
+                    % d; % d; % d; % d; \
+                    Safety indicators (STO, SDIp, SLS); % d; % d; % d; ",
+                p_cmd_vel->linear.x,
+                p_cmd_vel->angular.z, x, z, left_requested, right_requested, left, right,
+                (int)m_safety_msg.safe_torque_off, (int)m_safety_msg.safe_direction_indication_forward, (int)m_safety_msg.safety_limited_speed);
+
+#endif
         }
 
 #define CONF_MAX_DELTA_SPEED_SLS (m_motor_sls_rpm / 2)    // in rpm motor
