@@ -38,7 +38,7 @@ wget -qO - http://packages.ez-wheel.com:8081/archive.key | sudo apt-key add -
 Now, you should be able to install the `ros-noetic-swd-ros-controllers` package using `apt`:
 
 ```shell
-sudo apt update && sudo apt install ros-noetic-swd-ros-controllers
+sudo apt update && sudo apt install swd-services ros-noetic-swd-ros-controllers
 ```
 
 ### Compiling from source
@@ -62,7 +62,7 @@ catkin_make install
 source ~/ros_ws/install/setup.bash
 ```
 
-## Usage
+## Usage on a SWD® Starter Kit
 
 The package comes with a preconfigured `.launch` files which can be started using the `roslaunch` command:
 - `swd_diff_drive_controller.launch`: sample configuration for the [SWD® Starter Kit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr) differential drive robot. To use it, run the following command:
@@ -133,6 +133,56 @@ configuration.json
    }
 ]
 ```
+
+## Usage on your own IPC
+
+As the minimal SWD® Starter Kit config files do not exist on your IPC, you can install them manually as specified above or install them via a third package. 
+
+In this case, make sure you have added the ez-Wheel repository to your `/etc/apt/sources.list` as specified above.
+
+Firstly, you need to create a user `swd_sk` with sudo rights and swd_sk as default password:
+```shell
+sudo addgroup swd_sk
+sudo useradd -m -s /bin/bash -g swd_sk swd_sk
+sudo bash -c 'echo swd_sk:swd_sk | chpasswd'
+sudo usermod -aG sudo swd_sk
+```
+
+Then log in with user `swd_sk`:
+
+```shell
+su - swd_sk2
+```
+
+Then install `swd-system-config-2wheels` using:
+
+```shell
+sudo apt-get update && sudo apt install swd-system-config-2wheels
+```
+
+This package will configure your system to start at boot up four new services (with user `swd_sk` account):
+* `ezw-stack.service` : initialize can0
+* `ezw-dbus-user-session` : initialize D-Bus session
+* `ezw-swd-left.service` : start left D-Bus service
+* `ezw-swd-right.service` : start right D-Bus service
+
+and add the following config files as specified above :
+* `/opt/ezw/data/configuration.json`
+* `/opt/ezw/usr/etc/ezw-smc-core/swd_left_config.ini`
+* `/opt/ezw/usr/etc/ezw-smc-core/swd_right_config.ini`
+
+This packages comes also with the `commissioning scripts` used for each wheels :
+* `/opt/ezw/commissioning/SafetyHub12pts`
+
+You can modify them and do the commissioning using:
+```shell
+cd /opt/ezw/commissioning/SafetyHub12pts
+./swd_left_4_commissioning.py
+./swd_right_5_commissioning.py
+```
+
+Then refer to "Usage on a SWD® Starter Kit" for more information.
+
 ## The `swd_diff_drive_controller` node
 
 This controller drives two ez-Wheel SWD® wheels as a differential-drive robot.
