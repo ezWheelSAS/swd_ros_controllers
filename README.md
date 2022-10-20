@@ -151,7 +151,7 @@ sudo usermod -aG sudo swd_sk
 Then log in with user `swd_sk`:
 
 ```shell
-su - swd_sk2
+su - swd_sk
 ```
 
 Then install `swd-system-config-2wheels` using:
