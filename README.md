@@ -80,17 +80,29 @@ rosrun swd_ros_controllers swd_diff_drive_controller \
 ```
 The corresponding D-Bus services have to be started in order to use the nodes.
 Example for the [SWD® Starter Kit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr) differential drive robot:
-* ezw-dbus-user-session.service (dbus-launch > /tmp/SYSTEMCTL_dbus.id) [**OPTIONAL**]
-> export $(cat /tmp/SYSTEMCTL_dbus.id) [**OPTIONAL**]
 
-> export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ezw/usr/lib
-* ezw-swd-left.service (/opt/ezw/usr/bin/ezw-smc-service /opt/ezw/usr/etc/ezw-smc-core/swd_left_config.ini)
-* ezw-swd-right.service (/opt/ezw/usr/bin/ezw-smc-service /opt/ezw/usr/etc/ezw-smc-core/swd_right_config.ini)
+* The service `ezw-dbus-user-session.service` is equivalent to running:
+```shell
+dbus-launch > /tmp/SYSTEMCTL_dbus.id ## [OPTIONAL]
+```
+* Prepare the environment
+```shell
+export $(cat /tmp/SYSTEMCTL_dbus.id) ## [OPTIONAL]
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ezw/usr/lib
+```
+* The service `ezw-swd-left.service` is equivalent to running:
+```shell
+/opt/ezw/usr/bin/ezw-smc-service /opt/ezw/usr/etc/ezw-smc-core/swd_left_config.ini
+```
+* The service `ezw-swd-right.service` is equivalent to running:
+```shell
+/opt/ezw/usr/bin/ezw-smc-service /opt/ezw/usr/etc/ezw-smc-core/swd_right_config.ini
+```
 
 Example of configuration files for [SWD® Starter Kit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr) differential drive robot:
 
-swd_left_config.ini
-```
+### `swd_left_config.ini`
+```ini
 # SMC Drive service config file
 contextId = 12
 nodeId = 4
@@ -105,8 +117,8 @@ HWConfigurationFile = /opt/ezw/data/configuration.json
 CANOpenEDSFile = /opt/ezw/usr/etc/ezw-canopen-dico/swd_core.eds
 ```
 
-swd_right_config.ini
-```
+### `swd_right_config.ini`
+```ini
 # SMC Drive service config file
 contextId = 12
 nodeId = 5
@@ -121,8 +133,8 @@ HWConfigurationFile = /opt/ezw/data/configuration.json
 CANOpenEDSFile = /opt/ezw/usr/etc/ezw-canopen-dico/swd_core.eds
 ```
 
-configuration.json
-```
+### `configuration.json`
+```json
 [
    {
       "name": "SWD_CORE",
