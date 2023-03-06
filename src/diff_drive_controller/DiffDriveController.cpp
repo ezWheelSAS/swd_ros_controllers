@@ -347,6 +347,14 @@ namespace ezw {
             ROS_INFO("ez-Wheel's swd_diff_drive_controller initialized successfully!");
         }  // namespace swd
 
+        DiffDriveController::~DiffDriveController()
+        {
+            ROS_INFO("Set the robot velocity to zero");
+
+            // Stop the robot
+            setSpeeds(0, 0);
+        }
+
         void DiffDriveController::cbTimerStateMachine()
         {
             static bool m_first_entry = true;
@@ -790,11 +798,9 @@ namespace ezw {
 
             // If left minimum speed detected, impose the minimum speed
             bool left_min_limit = std::abs(p_left_speed) > 1 && std::abs(p_left_speed) <= m_left_min_speed_rpm;
-            ;
 
             // If right minimum speed detected, impose the minimum speed
             bool right_min_limit = std::abs(p_right_speed) > 1 && std::abs(p_right_speed) <= m_right_min_speed_rpm;
-            ;
 
             if (left_min_limit || right_min_limit) {
                 int32_t left_speed = p_left_speed;
@@ -971,6 +977,7 @@ namespace ezw {
         ///
         void DiffDriveController::cbWatchdog()
         {
+            // Stop the robot
             setSpeeds(0, 0);
         }
     }  // namespace swd

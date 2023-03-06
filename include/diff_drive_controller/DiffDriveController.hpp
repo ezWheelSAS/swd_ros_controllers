@@ -43,10 +43,17 @@ namespace ezw {
         class DiffDriveController {
            public:
             /**
-             * @brief Class constructor
-             * @param[in, out] nh ROS node handle
+             * @brief Construct a new Diff Drive Controller object
+             * 
+             * @param p_nh ROS node handle
              */
             explicit DiffDriveController(std::shared_ptr<ros::NodeHandle> &p_nh);
+
+            /**
+             * @brief Destroy the Diff Drive Controller object
+             * 
+             */
+            virtual ~DiffDriveController();
 
            private:
             ros::Publisher m_pub_odom, m_pub_safety;
