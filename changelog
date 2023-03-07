@@ -1,0 +1,9 @@
+swd-ros-controllers (3.3.1) unsable; urgency=medium
+
+  * Complete README.md with 'Users should regularly inform themselves about updates to this driver (best subscribe under "Watch")'
+  * Fix SLS behavior according to have_backward_sls parameter
+  * Stop SWD when shutdown is called by pressing Ctrl+c
+  * Better formatting for the documentation
+
+ -- Grégory Mermet <g.mermet@ez-wheel.com>  Tue, 07 Mar 2023 11:16:25 +0000
+
