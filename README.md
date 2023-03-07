@@ -8,6 +8,7 @@ This package has been tested on ROS Melodic and Noetic, it contains ROS nodes to
 | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | [SWD® Core](https://www.ez-wheel.com/en/safety-gear-motor) <br />Safety gear motor                      | [SWD® 150](https://www.ez-wheel.com/en/swd-150-safety-wheel-drive) <br />Safety wheel drive                      | [SWD® StarterKit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr) <br />Development kit for AGV and AMR |
 
+Users should regularly inform themselves about updates to this driver (best subscribe under "Watch").
 ## Installation
 
 This package has been tested on **x64_86** and **armhf** machines.
@@ -19,7 +20,7 @@ Some pre-built packages are available for ROS Noetic on Ubuntu 20.04 (for **x64_
 - `SWD firmware` (**`>= 1.0.1`**)
 - Ubuntu 20.04
 - ROS Noetic
-- `swd-services (>= 0.2.7)`
+- `swd-services` (**`>= 0.2.7`**)
 
 ### Ubuntu
 
@@ -148,7 +149,7 @@ CANOpenEDSFile = /opt/ezw/usr/etc/ezw-canopen-dico/swd_core.eds
 
 ## Usage on your own IPC
 
-As the minimal SWD® Starter Kit config files do not exist on your IPC, you can install them manually as specified above or install them via a third package. 
+As the minimal SWD® Starter Kit config files do not exist on your IPC, you can install them manually as specified above or install them via a third package.
 
 In this case, make sure you have added the ez-Wheel repository to your `/etc/apt/sources.list` as specified above.
 
@@ -201,9 +202,9 @@ This controller drives two ez-Wheel SWD® wheels as a differential-drive robot.
 
 ### Parameters
 
+- `baseline_m` of type **`double`**: The distance (in meters) between the 2 wheels (mandatory parameter).
 - `left_swd_config_file` of type **`string`**: Path to the `.ini` configuration file of the left motor (mandatory parameter).
 - `right_swd_config_file` of type **`string`**: Path to the `.ini` configuration file of the right motor (mandatory parameter).
-- `baseline_m` of type **`double`**: The distance (in meters) between the 2 wheels (mandatory parameter).
 - `pub_freq_hz` of type **`int`**: Frequency (in Hz) of published odometry and TFs (default `50`).
 - `command_timeout_ms` of type **`int`**: The delay (in milliseconds) before stopping the wheels if no command is received (default `1000`).
 - `base_frame` of type **`string`**: Frame ID for the moving platform, used in odometry and TFs (default `'base_link'`) (see [REP-150](https://www.ros.org/reps/rep-0105.html) for more info).
@@ -217,33 +218,37 @@ This controller drives two ez-Wheel SWD® wheels as a differential-drive robot.
 - `control_mode` of type **`string`**: This parameter selects the control mode of the robot, if `'Twist'` is selected, the node will subscribe to the `~cmd_vel` topic, if `'LeftRightSpeeds'` is selected, the node subscribe to `~set_speed` (default `'Twist'`).
 - `left_encoder_relative_error` of type **`double`**: Relative error for left wheel encoder, used to calculate variances and propagate them to calculate the uncertainties in the odometry message. Each encoder acquisition **`DIFF_LEFT_ENCODER`** is modeled as: **`DIFF_LEFT_ENCODER +/- abs(left_encoder_relative_error * DIFF_LEFT_ENCODER)`** (default `0.05` corresponding to 5% of error).
 - `right_encoder_relative_error` of type **`double`**: Relative error for right wheel encoder, used to calculate variances and propagate them to calculate the uncertainties in the odometry message. Each encoder acquisition **`DIFF_RIGHT_ENCODER`** is modeled as: **`DIFF_RIGHT_ENCODER +/- abs(right_encoder_relative_error * DIFF_RIGHT_ENCODER)`** (default `0.05` corresponding to 5% of error).
-- `fine_odometry` of type **`bool`**: Use fine odometry (default `false`). See fine_odometry.md for procedure to follow.
 
 ### Subscribed Topics
 
-- `~cmd_vel` of type **`geometry_msgs::Twist`**: Target linear and angular velocities (when `control_mode:='Twist'`, this is the default).
-- `~set_speed` of type **`geometry_msgs::Point`**: Target speeds in rad/s for left (`Point.x`) and right (`Point.y`) wheels (when `control_mode:='LeftRightSpeeds'`).
-- `~soft_brake` of type **`std_msgs::Bool`**: Activate or release the soft brake, send `false` to release the brake, or `true` to activate it.
+- `/cmd_vel` of type **`geometry_msgs::Twist`**: Target linear and angular velocities (when `control_mode:='Twist'`, this is the default).
+- `/set_speed` of type **`geometry_msgs::Point`**: Target speeds in rad/s for left (`Point.x`) and right (`Point.y`) wheels (when `control_mode:='LeftRightSpeeds'`).
+- `/soft_brake` of type **`std_msgs::Bool`**: Activate or release the soft brake, send `false` to release the brake, or `true` to activate it.
 
 ### Published Topics
 
-- `~odom` of type **`nav_msgs::Odometry`**: Odometry message based on wheels encoders, containing the pose and velocity of the robot with their's associated uncertainties. Unless disabled by the `publish_tf` parameter, TFs with the same information are also published.
-- `~safety` of type **`swd_ros_controllers::SafetyFunctions`**: Safety messages communicated by the wheels via CANOpen, the message includes information about Safe Torque Off (STO), Safety Limited Speed (SLS), Safe Direction Indication (forward/backward) (SDI+/-), and Safe Brake Control (SBC).
+- `/odom` of type **`nav_msgs::Odometry`**: Odometry message based on wheels encoders, containing the pose and velocity of the robot with their's associated uncertainties. Unless disabled by the `publish_tf` parameter, TFs with the same information are also published.
+- `/safety` of type **`swd_ros_controllers::SafetyFunctions`**: Safety messages communicated by the wheels via CANOpen, the message includes information about Safe Torque Off (STO), Safety Limited Speed (SLS), Safe Direction Indication (forward/backward) (SDI+/-), and Safe Brake Control (SBC).
 
 ## Custom message types
 
 ### The `swd_ros_controllers::SafetyFunctions` message
 
-This message encodes the safety functions read from the SWD via CANOpen.
+This message provides information about CiA 402-4 CANopen safety drive functions.
+True if the safety drive function is enabled.
 
 ```
 Header header
-bool safe_torque_off
-bool safe_brake_control
-bool safety_limited_speed
-bool safe_direction_indication_forward
-bool safe_direction_indication_backward
+bool safe_torque_off                        # Safe Torque Off (STO)
+bool safe_brake_control                     # Safe Brake Control (SBC)
+bool safety_limited_speed                   # Safety Limited Speed (SLS)
+bool safe_direction_indication_forward      # Safe Direction Indication (positive)
+bool safe_direction_indication_backward     # Safe Direction Indication (negative)
 ```
+
+The main safe drive function is the STO whereby the immediately torque-off on the motor may be accompanied by an SBC command to close the brakes.
+The SLS functions cause the drive to decelerate (if required) and monitor whether the velocity is held within the defined limits.
+The functions SDIp and SDIn enable the motor movement only in the corresponding (positive or negative) direction.
 
 ## Support
 
