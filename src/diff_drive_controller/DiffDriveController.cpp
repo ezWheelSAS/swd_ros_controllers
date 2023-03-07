@@ -714,8 +714,8 @@ namespace ezw {
             // For example, if it has only one forward-facing safety LiDAR, when the robot move backwards, there's no
             // safety guarantees, hence speed is limited to SLS, otherwise, the safety limit will be decided by the
             // presence of the SLS signal.
-            if (!m_have_backward_sls && (p_left_speed < 0) && (p_right_speed < 0) && (faster_motor_speed > m_max_motor_speed_rpm)) {
-                speed_limit = m_max_motor_speed_rpm;
+            if (!m_have_backward_sls && (p_left_speed < 0) && (p_right_speed < 0) && (faster_motor_speed > m_motor_sls_rpm)) {
+                speed_limit = m_motor_sls_rpm;
             }
 
             // Reading SLS
