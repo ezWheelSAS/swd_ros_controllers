@@ -40,6 +40,7 @@ using namespace std::chrono_literals;
 #define DEFAULT_PUBLISH_TF true
 #define DEFAULT_PUBLISH_SAFETY_FCNS true
 #define DEFAULT_BACKWARD_SLS false
+#define DEFAULT_ACCURATE_ODOMETRY false
 
 // Relative errors, used to calculate the covariance matrix in the odometry message
 // Used as follow:
@@ -70,6 +71,7 @@ namespace ezw {
             double max_wheel_speed_rpm = m_nh->param("wheel_max_speed_rpm", DEFAULT_MAX_WHEEL_SPEED_RPM);
             double max_sls_wheel_speed_rpm = m_nh->param("wheel_safety_limited_speed_rpm", DEFAULT_MAX_SLS_WHEEL_RPM);
             std::string ctrl_mode = m_nh->param("control_mode", DEFAULT_CTRL_MODE);
+            m_accurate_odometry = m_nh->param("accurate_odometry", DEFAULT_ACCURATE_ODOMETRY);
 
             if (m_baseline_m <= 0) {
                 ROS_ERROR("baseline_m parameter is mandatory and must be greater than 0");
@@ -211,21 +213,30 @@ namespace ezw {
             }
 
             // Read initial encoders values
-            err = m_left_controller.getOdometryValue(m_dist_left_prev_mm);
-            if (ERROR_NONE != err) {
+            ezw_error_t err_l, err_r;
+
+            if (m_accurate_odometry) {
+                err_l = m_left_controller.getAccurateOdometryValueTS(m_dist_left_prev_mm, m_left_timestamp_prev_us);
+                err_r = m_right_controller.getAccurateOdometryValueTS(m_dist_right_prev_mm, m_right_timestamp_prev_us);
+            }
+            else {
+                err_l = m_left_controller.getOdometryValueTS(m_dist_left_prev_mm, m_left_timestamp_prev_us);
+                err_r = m_right_controller.getOdometryValueTS(m_dist_right_prev_mm, m_right_timestamp_prev_us);
+            }
+
+            if (ERROR_NONE != err_l) {
                 ROS_ERROR(
-                    "Failed initial reading from left motor, EZW_ERR: SMCService : "
-                    "Controller::getOdometryValue() return error code : %d",
-                    (int)err);
+                    "Failed reading from left motor, EZW_ERR: SMCService : "
+                    "Controller::%s() return error code : %d",
+                    m_accurate_odometry ? "getAccurateOdometryValueTS" : "getOdometryValueTS", (int)err_l);
                 throw std::runtime_error("Initial reading from left motor failed");
             }
 
-            err = m_right_controller.getOdometryValue(m_dist_right_prev_mm);
-            if (ERROR_NONE != err) {
+            if (ERROR_NONE != err_r) {
                 ROS_ERROR(
-                    "Failed initial reading from right motor, EZW_ERR: SMCService : "
-                    "Controller::getOdometryValue() return error code : %d",
-                    (int)err);
+                    "Failed reading from right motor, EZW_ERR: SMCService : "
+                    "Controller::%s() return error code : %d",
+                    m_accurate_odometry ? "getAccurateOdometryValueTS" : "getOdometryValueTS", (int)err_r);
                 throw std::runtime_error("Initial reading from right motor failed");
             }
 
@@ -485,24 +496,32 @@ namespace ezw {
             nav_msgs::Odometry msg_odom;
 
             int32_t left_dist_now_mm = 0, right_dist_now_mm = 0;
+            uint64_t left_timestamp_us = 0, right_timestamp_us = 0;
 
             ezw_error_t err_l, err_r;
-            err_l = m_left_controller.getOdometryValue(left_dist_now_mm);    // In mm
-            err_r = m_right_controller.getOdometryValue(right_dist_now_mm);  // In mm
+
+            if (m_accurate_odometry) {
+                err_l = m_left_controller.getAccurateOdometryValueTS(left_dist_now_mm, left_timestamp_us);
+                err_r = m_right_controller.getAccurateOdometryValueTS(right_dist_now_mm, right_timestamp_us);
+            }
+            else {
+                err_l = m_left_controller.getOdometryValueTS(left_dist_now_mm, left_timestamp_us);
+                err_r = m_right_controller.getOdometryValueTS(right_dist_now_mm, right_timestamp_us);
+            }
 
             if (ERROR_NONE != err_l) {
                 ROS_ERROR(
                     "Failed reading from left motor, EZW_ERR: SMCService : "
-                    "Controller::getOdometryValue() return error code : %d",
-                    (int)err_l);
+                    "Controller::%s() return error code : %d",
+                    m_accurate_odometry ? "getAccurateOdometryValueTS" : "getOdometryValueTS", (int)err_l);
                 return;
             }
 
             if (ERROR_NONE != err_r) {
                 ROS_ERROR(
                     "Failed reading from right motor, EZW_ERR: SMCService : "
-                    "Controller::getOdometryValue() return error code : %d",
-                    (int)err_r);
+                    "Controller::%s() return error code : %d",
+                    m_accurate_odometry ? "getAccurateOdometryValueTS" : "getOdometryValueTS", (int)err_r);
                 return;
             }
 
@@ -510,15 +529,22 @@ namespace ezw {
             double d_dist_left_m = static_cast<double>(left_dist_now_mm - m_dist_left_prev_mm) / 1000.0;
             double d_dist_right_m = static_cast<double>(right_dist_now_mm - m_dist_right_prev_mm) / 1000.0;
 
-            // Error calculation (standard deviation)
-            double d_dist_left_err_m = m_left_encoder_relative_error * std::abs(d_dist_left_m);
-            double d_dist_right_err_m = m_right_encoder_relative_error * std::abs(d_dist_right_m);
+            // Time difference between t and t-1
+            auto dt_s = 1.0 / m_pub_freq_hz;
+            auto left_dt_s = (left_timestamp_us - m_left_timestamp_prev_us) / 1000000.0;
+            auto right_dt_s = (right_timestamp_us - m_right_timestamp_prev_us) / 1000000.0;
 
-            auto timestamp = ros::Time::now();
+            // Encoder difference normalization
+            auto d_dist_left_norm_m = d_dist_left_m * dt_s / left_dt_s;
+            auto d_dist_right_norm_m = d_dist_right_m * dt_s / right_dt_s;
 
             // Kinematic model
-            double d_dist_center = (d_dist_left_m + d_dist_right_m) / 2.0;
-            double d_theta = (d_dist_right_m - d_dist_left_m) / m_baseline_m;
+            double d_dist_center = (d_dist_left_norm_m + d_dist_right_norm_m) / 2.0;
+            double d_theta = (d_dist_right_norm_m - d_dist_left_norm_m) / m_baseline_m;
+
+            // Error calculation (standard deviation)
+            double d_dist_left_err_m = m_left_encoder_relative_error * std::abs(d_dist_left_norm_m);
+            double d_dist_right_err_m = m_right_encoder_relative_error * std::abs(d_dist_right_norm_m);
 
             // Error propagation (See https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Non-linear_combinations)
             double d_dist_center_err = std::sqrt(std::pow(d_dist_left_err_m / 2.0, 2) + std::pow(d_dist_right_err_m / 2.0, 2));
@@ -534,13 +560,15 @@ namespace ezw {
             double y_now_err = std::sqrt(std::pow(m_y_prev_err, 2) + std::pow(std::sin(m_theta_prev) * d_dist_center_err, 2) + std::pow(std::cos(m_theta_prev) * d_dist_center * m_theta_prev_err, 2));
             double theta_now_err = std::sqrt(std::pow(m_theta_prev_err, 2) + std::pow(d_theta_err, 2));
 
+            auto timestamp = ros::Time::now();
+
             msg_odom.header.stamp = timestamp;
             msg_odom.header.frame_id = m_odom_frame;
             msg_odom.child_frame_id = m_base_frame;
 
             msg_odom.twist = geometry_msgs::TwistWithCovariance();
-            msg_odom.twist.twist.linear.x = d_dist_center * m_pub_freq_hz;
-            msg_odom.twist.twist.angular.z = d_theta * m_pub_freq_hz;
+            msg_odom.twist.twist.linear.x = d_dist_center / dt_s;
+            msg_odom.twist.twist.angular.z = d_theta / dt_s;
 
             // Set uncertainties for linear and angular velocities (6 * 6) matrix (x y z Rx Ry Rz)
             msg_odom.twist.covariance[0] = std::pow(d_dist_center_err * m_pub_freq_hz, 2);
@@ -592,6 +620,8 @@ namespace ezw {
             m_theta_prev_err = theta_now_err;
             m_dist_left_prev_mm = left_dist_now_mm;
             m_dist_right_prev_mm = right_dist_now_mm;
+            m_left_timestamp_prev_us = left_timestamp_us;
+            m_right_timestamp_prev_us = right_timestamp_us;
         }
 
         ///

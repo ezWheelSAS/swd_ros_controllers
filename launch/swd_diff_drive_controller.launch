@@ -17,6 +17,7 @@
   <arg name="publish_odom" default="true" />
   <arg name="publish_tf" default="true" />
   <arg name="publish_safety_functions" default="true" />
+  <arg name="accurate_odometry" default="false" />
 
   <node pkg="swd_ros_controllers" name="swd_diff_drive_controller" type="swd_diff_drive_controller" output="screen">
     <param name="baseline_m" value="$(arg baseline_m)" />
@@ -35,5 +36,6 @@
     <param name="publish_odom" value="$(arg publish_odom)" />
     <param name="publish_tf" value="$(arg publish_tf)" />
     <param name="publish_safety_functions" value="$(arg publish_safety_functions)" />
+    <param name="accurate_odometry" value="$(arg accurate_odometry)" />
   </node>
 </launch>

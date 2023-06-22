@@ -68,6 +68,7 @@ namespace ezw {
             std::string m_odom_frame, m_base_frame, m_left_config_file, m_right_config_file;
             bool m_have_backward_sls, m_publish_odom, m_publish_tf, m_publish_safety, m_nmt_ok, m_pds_ok;
             uint32_t m_left_min_speed_rpm, m_right_min_speed_rpm = 0;
+            bool m_accurate_odometry;
 
             ros::Timer m_timer_odom, m_timer_watchdog, m_timer_pds, m_timer_safety;
             ezw::smcservice::DBusClient m_left_controller, m_right_controller;
@@ -80,6 +81,7 @@ namespace ezw {
             double m_x_prev = 0.0, m_y_prev = 0.0, m_theta_prev = 0.0;
             double m_x_prev_err = 0.0, m_y_prev_err = 0.0, m_theta_prev_err = 0.0;
             int32_t m_dist_left_prev_mm = 0, m_dist_right_prev_mm = 0;
+            uint64_t m_left_timestamp_prev_us = 0, m_right_timestamp_prev_us = 0;
 
             void setSpeeds(int32_t p_left_speed, int32_t p_right_speed);
             void cbSetSpeed(const geometry_msgs::PointConstPtr &p_speed);
