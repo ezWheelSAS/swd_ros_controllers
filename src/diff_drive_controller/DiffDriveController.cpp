@@ -33,7 +33,8 @@ using namespace std::chrono_literals;
 #define DEFAULT_BASE_FRAME std::string("base_link")
 #define DEFAULT_CTRL_MODE std::string("Twist")
 #define DEFAULT_MAX_WHEEL_SPEED_RPM 75.0  // 75 rpm Wheel => Motor (75 * 14 = 1050 rpm)
-#define DEFAULT_MAX_SLS_WHEEL_RPM 30.0    // 30 rpm Wheel => Motor (30 * 14 = 490 rpm)
+#define DEFAULT_MAX_SLS_WHEEL_RPM 35.0    // 35 rpm Wheel => Motor (35 * 14 = 490 rpm)
+#define DEFAULT_MAX_DELTA_WHEEL_RPM DEFAULT_MAX_WHEEL_SPEED_RPM / 2.0
 #define DEFAULT_PUB_FREQ_HZ 50
 #define DEFAULT_WATCHDOG_MS 1000
 #define DEFAULT_PUBLISH_ODOM true
@@ -70,6 +71,7 @@ namespace ezw {
             m_right_encoder_relative_error = m_nh->param("right_encoder_relative_error", DEFAULT_RIGHT_RELATIVE_ERROR);
             double max_wheel_speed_rpm = m_nh->param("wheel_max_speed_rpm", DEFAULT_MAX_WHEEL_SPEED_RPM);
             double max_sls_wheel_speed_rpm = m_nh->param("wheel_safety_limited_speed_rpm", DEFAULT_MAX_SLS_WHEEL_RPM);
+            double max_delta_wheel_speed_rpm = m_nh->param("wheel_max_delta_speed_rpm", DEFAULT_MAX_DELTA_WHEEL_RPM);
             std::string ctrl_mode = m_nh->param("control_mode", DEFAULT_CTRL_MODE);
             m_accurate_odometry = m_nh->param("accurate_odometry", DEFAULT_ACCURATE_ODOMETRY);
 
@@ -334,6 +336,7 @@ namespace ezw {
             // Set m_max_motor_speed_rpm from wheel_sls and motor_reduction
             m_max_motor_speed_rpm = static_cast<int32_t>(max_wheel_speed_rpm * m_l_motor_reduction);
             m_motor_sls_rpm = static_cast<int32_t>(max_sls_wheel_speed_rpm * m_l_motor_reduction);
+            m_motor_delta_rpm = static_cast<int32_t>(max_delta_wheel_speed_rpm * m_l_motor_reduction);
 
             ROS_INFO(
                 "Got parameter 'wheel_max_speed_rpm' = %f rpm. "
@@ -344,6 +347,11 @@ namespace ezw {
                 "Got parameter 'wheel_safety_limited_speed_rpm' = %f rpm. "
                 "Setting maximum motor safety limited speed to %d rpm",
                 max_sls_wheel_speed_rpm, m_motor_sls_rpm);
+
+            ROS_INFO(
+                "Got parameter 'wheel_max_delta_speed_rpm' = %f rpm. "
+                "Setting maximum motor delta speed to %d rpm",
+                max_delta_wheel_speed_rpm, m_motor_delta_rpm);
 
             // Create timers
             m_timer_watchdog = m_nh->createTimer(ros::Duration(m_watchdog_receive_ms / 1000.0), boost::bind(&DiffDriveController::cbWatchdog, this));
@@ -715,8 +723,8 @@ namespace ezw {
 #endif
         }
 
-#define CONF_MAX_DELTA_SPEED_SLS (m_motor_sls_rpm / 2)    // in rpm motor
-#define CONF_MAX_DELTA_SPEED (m_max_motor_speed_rpm / 2)  // in rpm motor
+#define CONF_MAX_DELTA_SPEED_SLS (m_motor_sls_rpm / 2)  // in rpm motor
+#define CONF_MAX_DELTA_SPEED (m_motor_delta_rpm)        // in rpm motor
 
         ///
         /// \brief Change robot velocity (left in rpm, right in rpm)
