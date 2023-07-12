@@ -1,4 +1,12 @@
-swd-ros-controllers (3.3.1) unsable; urgency=medium
+swd-ros-controllers (3.4.0) unstable; urgency=medium
+
+  * Add wheel_max_delta_speed_rpm parameter  
+  * Improve /odom precision and add accurate_odometry parameter
+  * Fix motors synchronisation when STO is deactivated
+
+ -- Grégory Mermet <g.mermet@ez-wheel.com>  Mon, 17 Jul 2023 12:30:47 +0000
+
+swd-ros-controllers (3.3.1) unstable; urgency=medium
 
   * Complete README.md with 'Users should regularly inform themselves about updates to this driver (best subscribe under "Watch")'
   * Fix SLS behavior according to have_backward_sls parameter
