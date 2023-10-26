@@ -10,7 +10,7 @@
   <arg name="base_frame" default="base_link" />
   <arg name="odom_frame" default="odom" />
   <arg name="wheel_max_speed_rpm" default="75" />
-  <arg name="wheel_safety_limited_speed_rpm" default="35" />
+  <arg name="wheel_safety_limited_speed_rpm" default="40" />
   <arg name="wheel_max_delta_speed_rpm" default="37.5" />
   <arg name="have_backward_sls" default="false" />
   <arg name="left_encoder_relative_error" default="0.2" />

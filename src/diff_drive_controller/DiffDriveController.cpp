@@ -33,7 +33,7 @@ using namespace std::chrono_literals;
 #define DEFAULT_BASE_FRAME std::string("base_link")
 #define DEFAULT_CTRL_MODE std::string("Twist")
 #define DEFAULT_MAX_WHEEL_SPEED_RPM 75.0  // 75 rpm Wheel => Motor (75 * 14 = 1050 rpm)
-#define DEFAULT_MAX_SLS_WHEEL_RPM 35.0    // 35 rpm Wheel => Motor (35 * 14 = 490 rpm)
+#define DEFAULT_MAX_SLS_WHEEL_RPM 40.0    // 40 rpm Wheel => Motor (40 * 14 = 560 rpm)
 #define DEFAULT_MAX_DELTA_WHEEL_RPM DEFAULT_MAX_WHEEL_SPEED_RPM / 2.0
 #define DEFAULT_PUB_FREQ_HZ 50
 #define DEFAULT_WATCHDOG_MS 1000
