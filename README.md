@@ -15,7 +15,7 @@ Users should regularly inform themselves about updates of this driver (Activatin
 - Two SWD® based wheels
 - Ubuntu 20.04
 - ROS Noetic
-- `swd-services` (**`>= 0.3.0`**)
+- `swd-services` (**`>= 2.0.0`**)
 
 ## Pre-built debian package
 
