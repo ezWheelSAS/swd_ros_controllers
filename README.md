@@ -31,9 +31,9 @@ It is available for the following platforms:
 
 In order to install `swd_ros_controllers` with apt, you need to add ez-Wheel repository to your Apt sources configuration file as sudo in: `/etc/apt/sources.list`. Type the following command:
 
-For both versions: Ubuntu 20.04 (focal) or Ubuntu 22.04 (jammy):
+For  Ubuntu 20.04 (focal):
 ```shell
-echo "deb http://packages.ez-wheel.com:8081/apt-repo" | sudo tee -a /etc/apt/sources.list
+echo "deb http://packages.ez-wheel.com:8081/apt-repo focal main" | sudo tee -a /etc/apt/sources.list
 ```
 
 Then, download and add the GPG key. Type the following command:
