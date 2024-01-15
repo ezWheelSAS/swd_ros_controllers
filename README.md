@@ -4,17 +4,18 @@
 
 This package has been tested on ROS Noetic, it contains a ROS node that controls motors powered by [ez-Wheel](https://www.ez-wheel.com) Safety Wheel Drive (SWD®) technology.
 
-| <img src="https://www.ez-wheel.com/storage/image-product/visuels-swd-core-2-0-0.png" width="45%"></img> | <img src="https://www.ez-wheel.com/storage/image-product/roue-electrique-swd-150-2-0-0-0.png" width="45%"></img> | <img src="https://www.ez-wheel.com/storage/image-product/starterkit-ez-wheel-web-0-0-0.png" width="45%"></img>       |
-| ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| [SWD® Core](https://www.ez-wheel.com/en/safety-gear-motor) <br />Safety gear motor                      | [SWD® 150](https://www.ez-wheel.com/en/swd-150-safety-wheel-drive) <br />Safety wheel drive                      | [SWD® StarterKit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr) <br />Development kit for AGV and AMR |
+|![SWD-Core](https://www.ez-wheel.com/storage/image-product/visuels-swd-core-2-0-0.png) |![SWD-125](https://www.ez-wheel.com/storage/image-product/ezswd125im-31102023-photo-hd-det.png) |![SWD-150](https://www.ez-wheel.com/storage/image-product/roue-electrique-swd-150-2-0-0-0.png) |![SWD-StarterKit](https://www.ez-wheel.com/storage/image-product/starterkit-ez-wheel-web-0-0-0.png)|
+| ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| [SWD® Core](https://www.ez-wheel.com/en/safety-gear-motor)  | [SWD® 125](https://ez-wheel.com/en/safety-wheel-drive-swd-125) | [SWD® 150](https://www.ez-wheel.com/en/swd-150-safety-wheel-drive) | [SWD® StarterKit](https://www.ez-wheel.com/en/development-kit-for-agv-and-amr) |
+| Safety gear motor                                           | Medium duty Safety Wheel Drive                                 | Heavy duty Safety Wheel Drive                                      | Development kit for AGV and AMR |
 
 Users should regularly inform themselves about updates of this driver (Activating GitHub notifications with "Watch", 'All activity' button on top of this page).
 
 ## Prerequisites
 
 - Two SWD® based wheels
-- Ubuntu 20.04
-- ROS Noetic
+- `SWD firmware` (**`>= 1.0.1`**)
+- Ubuntu 20.04 (Focal Fossa) and ROS (Melodic or Noetic)
 - `swd-services` (**`>= 2.0.0`**)
 
 ## Pre-built debian package
@@ -31,9 +32,8 @@ It is available for the following platforms:
 
 In order to install `swd_ros_controllers` with apt, you need to add ez-Wheel repository to your Apt sources configuration file as sudo in: `/etc/apt/sources.list`. Type the following command:
 
-For  Ubuntu 20.04 (focal):
 ```shell
-echo "deb http://packages.ez-wheel.com:8081/apt-repo focal main" | sudo tee -a /etc/apt/sources.list
+echo "deb http://packages.ez-wheel.com:8081/ubuntu/ $(lsb_release -cs) main" | sudo tee -a /etc/apt/sources.list
 ```
 
 Then, download and add the GPG key. Type the following command:
@@ -45,7 +45,7 @@ wget -qO - http://packages.ez-wheel.com:8081/archive.key | sudo apt-key add -
 Now, you should be able to install ez-Wheel's packages using `Advanced Packaging Tool (apt)`:
 
 ```shell
-sudo apt update && sudo apt install swd-services ros-noetic-swd-ros-controllers
+sudo apt update && sudo apt install swd-services ros-${ROS_DISTRO}-swd-ros-controllers
 ```
 
 ### METHOD 2: Compiling from source
