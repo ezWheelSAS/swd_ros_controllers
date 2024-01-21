@@ -15,7 +15,8 @@ Users should regularly inform themselves about updates of this driver (Activatin
 
 - Two SWD® based wheels
 - `SWD firmware` (**`>= 1.0.1`**)
-- Ubuntu 20.04 (Focal Fossa) and ROS (Melodic or Noetic)
+- Ubuntu :
+  - 20.04 (Focal Fossa) and ROS (Melodic or Noetic)
 - `swd-services` (**`>= 2.0.0`**)
 
 ## Pre-built debian package
@@ -86,8 +87,7 @@ You can always use the node with the `rosrun` command, the minimum required para
 
 ```shell
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ezw/usr/lib
-rosrun swd_ros_controllers swd_diff_drive_controller \
-                           _baseline:=0.485
+rosrun swd_ros_controllers swd_diff_drive_controller _baseline:=0.485
 ```
 
 The corresponding D-Bus services have to be started in order to use the nodes.
@@ -261,7 +261,7 @@ This controller manages two ez-Wheel SWD® wheels as a differential kinetic robo
 
 ### Custom message types
 
-### `swd_ros_controllers::SafetyFunctions` message
+#### `swd_ros_controllers::SafetyFunctions` message
 
 This message provides information about the state of the Safety functions.
 The value is `True` if the safety function is enabled.
@@ -313,7 +313,8 @@ sudo apt search swd-
 
 ### Error during commissioning
 
-Before applying commissioning, stops all ROS nodes running. And execute python scrcipt in the commissionning directory:
+Before applying commissioning, stop `swd_diff_drive_controller` node.
+Then, execute again python scripts in the commissionning directory:
 
 ```shell
 systemctl stop ezw-ros-bringup
