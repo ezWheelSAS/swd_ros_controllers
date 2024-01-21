@@ -33,7 +33,8 @@ using namespace std::chrono_literals;
 #define DEFAULT_BASE_FRAME std::string("base_link")
 #define DEFAULT_CTRL_MODE std::string("Twist")
 #define DEFAULT_MAX_WHEEL_SPEED_RPM 75.0  // 75 rpm Wheel => Motor (75 * 14 = 1050 rpm)
-#define DEFAULT_MAX_SLS_WHEEL_RPM 40.0    // 40 rpm Wheel => Motor (40 * 14 = 560 rpm)
+#define DEFAULT_MAX_SLS_1_WHEEL_RPM 40.0  // 40 rpm Wheel => Motor (40 * 14 = 560 rpm)
+#define DEFAULT_MAX_SLS_2_WHEEL_RPM 48.5  // 48.5 rpm Wheel => Motor (48.5 * 14 = 679 rpm)
 #define DEFAULT_MAX_DELTA_WHEEL_RPM DEFAULT_MAX_WHEEL_SPEED_RPM / 2.0
 #define DEFAULT_PUB_FREQ_HZ 50
 #define DEFAULT_WATCHDOG_MS 1000
@@ -70,7 +71,8 @@ namespace ezw {
             m_left_encoder_relative_error = m_nh->param("left_encoder_relative_error", DEFAULT_LEFT_RELATIVE_ERROR);
             m_right_encoder_relative_error = m_nh->param("right_encoder_relative_error", DEFAULT_RIGHT_RELATIVE_ERROR);
             double max_wheel_speed_rpm = m_nh->param("wheel_max_speed_rpm", DEFAULT_MAX_WHEEL_SPEED_RPM);
-            double max_sls_wheel_speed_rpm = m_nh->param("wheel_safety_limited_speed_rpm", DEFAULT_MAX_SLS_WHEEL_RPM);
+            double max_sls_wheel_speed_1_rpm = m_nh->param("wheel_safety_limited_speed_1_rpm", DEFAULT_MAX_SLS_1_WHEEL_RPM);
+            double max_sls_wheel_speed_2_rpm = m_nh->param("wheel_safety_limited_speed_2_rpm", DEFAULT_MAX_SLS_2_WHEEL_RPM);
             double max_delta_wheel_speed_rpm = m_nh->param("wheel_max_delta_speed_rpm", DEFAULT_MAX_DELTA_WHEEL_RPM);
             std::string ctrl_mode = m_nh->param("control_mode", DEFAULT_CTRL_MODE);
             m_accurate_odometry = m_nh->param("accurate_odometry", DEFAULT_ACCURATE_ODOMETRY);
@@ -131,12 +133,20 @@ namespace ezw {
                     max_wheel_speed_rpm, DEFAULT_MAX_WHEEL_SPEED_RPM);
             }
 
-            if (max_sls_wheel_speed_rpm < 0.) {
-                max_sls_wheel_speed_rpm = DEFAULT_MAX_SLS_WHEEL_RPM;
+            if (max_sls_wheel_speed_1_rpm < 0.) {
+                max_sls_wheel_speed_1_rpm = DEFAULT_MAX_SLS_1_WHEEL_RPM;
                 ROS_ERROR(
-                    "Invalid value %f for parameter 'wheel_safety_limited_speed_rpm', it should be a positive value. "
+                    "Invalid value %f for parameter 'wheel_safety_limited_speed_1_rpm', it should be a positive value. "
                     "Falling back to default (%f)",
-                    max_sls_wheel_speed_rpm, DEFAULT_MAX_SLS_WHEEL_RPM);
+                    max_sls_wheel_speed_1_rpm, DEFAULT_MAX_SLS_1_WHEEL_RPM);
+            }
+
+            if (max_sls_wheel_speed_2_rpm < 0.) {
+                max_sls_wheel_speed_2_rpm = DEFAULT_MAX_SLS_2_WHEEL_RPM;
+                ROS_ERROR(
+                    "Invalid value %f for parameter 'wheel_safety_limited_speed_2_rpm', it should be a positive value. "
+                    "Falling back to default (%f)",
+                    max_sls_wheel_speed_2_rpm, DEFAULT_MAX_SLS_2_WHEEL_RPM);
             }
 
             // Initialize motors
@@ -333,25 +343,31 @@ namespace ezw {
             m_left_safety_functions[safety_control_word_mapping.safety_function_4] = 4;
             m_left_safety_functions[safety_control_word_mapping.safety_function_5] = 5;
 
-            // Set m_max_motor_speed_rpm from wheel_sls and motor_reduction
-            m_max_motor_speed_rpm = static_cast<int32_t>(max_wheel_speed_rpm * m_l_motor_reduction);
-            m_motor_sls_rpm = static_cast<int32_t>(max_sls_wheel_speed_rpm * m_l_motor_reduction);
-            m_motor_delta_rpm = static_cast<int32_t>(max_delta_wheel_speed_rpm * m_l_motor_reduction);
+            // Set m_motor_max_speed_rpm from wheel_sls and motor_reduction
+            m_motor_max_speed_rpm = static_cast<int32_t>(max_wheel_speed_rpm * m_l_motor_reduction);
+            m_motor_max_sls_1_speed_rpm = static_cast<int32_t>(max_sls_wheel_speed_1_rpm * m_l_motor_reduction);
+            m_motor_max_sls_2_speed_rpm = static_cast<int32_t>(max_sls_wheel_speed_2_rpm * m_l_motor_reduction);
+            m_motor_max_delta_speed_rpm = static_cast<int32_t>(max_delta_wheel_speed_rpm * m_l_motor_reduction);
 
             ROS_INFO(
                 "Got parameter 'wheel_max_speed_rpm' = %f rpm. "
                 "Setting maximum motor speed to %d rpm",
-                max_wheel_speed_rpm, m_max_motor_speed_rpm);
+                max_wheel_speed_rpm, m_motor_max_speed_rpm);
 
             ROS_INFO(
-                "Got parameter 'wheel_safety_limited_speed_rpm' = %f rpm. "
-                "Setting maximum motor safety limited speed to %d rpm",
-                max_sls_wheel_speed_rpm, m_motor_sls_rpm);
+                "Got parameter 'wheel_safety_limited_speed_1_rpm' = %f rpm. "
+                "Setting maximum motor safety limited speed 1 to %d rpm",
+                max_sls_wheel_speed_1_rpm, m_motor_max_sls_1_speed_rpm);
+
+            ROS_INFO(
+                "Got parameter 'wheel_safety_limited_speed_2_rpm' = %f rpm. "
+                "Setting maximum motor safety limited speed 2 to %d rpm",
+                max_sls_wheel_speed_2_rpm, m_motor_max_sls_2_speed_rpm);
 
             ROS_INFO(
                 "Got parameter 'wheel_max_delta_speed_rpm' = %f rpm. "
                 "Setting maximum motor delta speed to %d rpm",
-                max_delta_wheel_speed_rpm, m_motor_delta_rpm);
+                max_delta_wheel_speed_rpm, m_motor_max_delta_speed_rpm);
 
             // Create timers
             m_timer_watchdog = m_nh->createTimer(ros::Duration(m_watchdog_receive_ms / 1000.0), boost::bind(&DiffDriveController::cbWatchdog, this));
@@ -729,8 +745,9 @@ namespace ezw {
 #endif
         }
 
-#define CONF_MAX_DELTA_SPEED_SLS (m_motor_sls_rpm / 2)  // in rpm motor
-#define CONF_MAX_DELTA_SPEED (m_motor_delta_rpm)        // in rpm motor
+#define CONF_MAX_DELTA_SPEED_SLS_1 (m_motor_max_sls_1_speed_rpm / 2)  // in rpm motor
+#define CONF_MAX_DELTA_SPEED_SLS_2 (m_motor_max_sls_2_speed_rpm / 2)  // in rpm motor
+#define CONF_MAX_DELTA_SPEED (m_motor_max_delta_speed_rpm)            // in rpm motor
 
         ///
         /// \brief Change robot velocity (left in rpm, right in rpm)
@@ -744,30 +761,38 @@ namespace ezw {
             int32_t speed_limit = -1;
             bool max_limited = false;
             bool sls_limited = false;
+            int8_t enabled_sls_num = -1;
 
             // Limit to the maximum allowed speed
-            if (faster_motor_speed > m_max_motor_speed_rpm) {
-                speed_limit = m_max_motor_speed_rpm;
+            if (faster_motor_speed > m_motor_max_speed_rpm) {
+                speed_limit = m_motor_max_speed_rpm;
                 max_limited = true;
+            }
+
+            // Reading SLS_1/SLS_2
+            m_safety_msg_mtx.lock();
+            bool sls_1_signal = m_safety_msg.safety_limited_speed_1;
+            bool sls_2_signal = m_safety_msg.safety_limited_speed_2;
+            m_safety_msg_mtx.unlock();
+
+            // If SLS detected, impose the safety limited speed (SLS)
+            if (sls_1_signal && (faster_motor_speed > m_motor_max_sls_1_speed_rpm)) {
+                speed_limit = m_motor_max_sls_1_speed_rpm;
+                sls_limited = true;
+                enabled_sls_num = 1;
+            }
+            else if (sls_2_signal && (faster_motor_speed > m_motor_max_sls_2_speed_rpm)) {
+                speed_limit = m_motor_max_sls_2_speed_rpm;
+                sls_limited = true;
+                enabled_sls_num = 2;
             }
 
             // Impose the safety limited speed (SLS) in backward movement when the robot doesn't have backward SLS signal.
             // For example, if it has only one forward-facing safety LiDAR, when the robot move backwards, there's no
             // safety guarantees, hence speed is limited to SLS, otherwise, the safety limit will be decided by the
             // presence of the SLS signal.
-            if (!m_have_backward_sls && (p_left_speed < 0) && (p_right_speed < 0) && (faster_motor_speed > m_motor_sls_rpm)) {
-                speed_limit = m_motor_sls_rpm;
-            }
-
-            // Reading SLS
-            m_safety_msg_mtx.lock();
-            bool sls_signal = m_safety_msg.safety_limited_speed;
-            m_safety_msg_mtx.unlock();
-
-            // If SLS detected, impose the safety limited speed (SLS)
-            if (sls_signal && (faster_motor_speed > m_motor_sls_rpm)) {
-                speed_limit = m_motor_sls_rpm;
-                sls_limited = true;
+            if (!m_have_backward_sls && (p_left_speed < 0) && (p_right_speed < 0) && (faster_motor_speed > m_motor_max_sls_1_speed_rpm)) {
+                speed_limit = m_motor_max_sls_1_speed_rpm;
             }
 
             // The left and right motors may have different speeds.
@@ -786,15 +811,15 @@ namespace ezw {
 
                 if (max_limited && sls_limited) {
                     ROS_INFO(
-                        "The target speed exceeds the MAX/SLS maximum speed limit (%d rpm). "
+                        "The target speed exceeds the MAX/SLS_%d maximum speed limit (%d rpm). "
                         "Set speed to (left, right) (%d, %d) rpm",
-                        speed_limit, p_left_speed, p_right_speed);
+                        enabled_sls_num, speed_limit, p_left_speed, p_right_speed);
                 }
                 else if (sls_limited) {
                     ROS_INFO(
-                        "The target speed exceeds the SLS maximum speed limit (%d rpm). "
+                        "The target speed exceeds the SLS_%d maximum speed limit (%d rpm). "
                         "Set speed to (left, right) (%d, %d) rpm",
-                        speed_limit, p_left_speed, p_right_speed);
+                        enabled_sls_num, speed_limit, p_left_speed, p_right_speed);
                 }
                 else if (max_limited) {
                     ROS_INFO(
@@ -814,8 +839,11 @@ namespace ezw {
             }
 
             // If SLS detected, limit to the maximum allowed delta safety limited speed (SLS)
-            if (sls_signal && (delta_wheel_speed > CONF_MAX_DELTA_SPEED_SLS)) {
-                delta_speed_limit = CONF_MAX_DELTA_SPEED_SLS;
+            if (sls_1_signal && (delta_wheel_speed > CONF_MAX_DELTA_SPEED_SLS_1)) {
+                delta_speed_limit = CONF_MAX_DELTA_SPEED_SLS_1;
+            }
+            else if (sls_2_signal && (delta_wheel_speed > CONF_MAX_DELTA_SPEED_SLS_2)) {
+                delta_speed_limit = CONF_MAX_DELTA_SPEED_SLS_2;
             }
 
             // The left and right wheels may have different speeds.
@@ -990,17 +1018,26 @@ namespace ezw {
                 ROS_INFO(msg.safe_direction_indication_backward ? "SDIn enabled." : "SDIn disabled.");
             }
 
-            // Reading SLS
+            // Reading SLS_1
             res_l = m_left_safety_functions.count(ezw::smccore::ISafeMotionService::SafetyFunctionId::SLS_1) ? safein1_l[m_left_safety_functions[ezw::smccore::ISafeMotionService::SafetyFunctionId::SLS_1]] : true;
             res_r = m_right_safety_functions.count(ezw::smccore::ISafeMotionService::SafetyFunctionId::SLS_1) ? safein1_r[m_right_safety_functions[ezw::smccore::ISafeMotionService::SafetyFunctionId::SLS_1]] : true;
 
-            msg.safety_limited_speed = static_cast<uint8_t>(!res_l || !res_r);
-            if (m_first_entry || msg.safety_limited_speed != m_safety_msg.safety_limited_speed) {
-                ROS_INFO(msg.safety_limited_speed ? "SLS enabled." : "SLS disabled.");
+            msg.safety_limited_speed_1 = static_cast<uint8_t>(!res_l || !res_r);
+            if (m_first_entry || msg.safety_limited_speed_1 != m_safety_msg.safety_limited_speed_1) {
+                ROS_INFO(msg.safety_limited_speed_1 ? "SLS_1 enabled." : "SLS_1 disabled.");
+            }
+
+            // Reading SLS_2
+            res_l = m_left_safety_functions.count(ezw::smccore::ISafeMotionService::SafetyFunctionId::SLS_2) ? safein1_l[m_left_safety_functions[ezw::smccore::ISafeMotionService::SafetyFunctionId::SLS_2]] : true;
+            res_r = m_right_safety_functions.count(ezw::smccore::ISafeMotionService::SafetyFunctionId::SLS_2) ? safein1_r[m_right_safety_functions[ezw::smccore::ISafeMotionService::SafetyFunctionId::SLS_2]] : true;
+
+            msg.safety_limited_speed_2 = static_cast<uint8_t>(!res_l || !res_r);
+            if (m_first_entry || msg.safety_limited_speed_2 != m_safety_msg.safety_limited_speed_2) {
+                ROS_INFO(msg.safety_limited_speed_2 ? "SLS_2 enabled." : "SLS_2 disabled.");
             }
 
 #if VERBOSE_OUTPUT
-            ROS_INFO("STO: %d, SDI+: %d, SDI-: %d, SLS: %d", msg.safe_torque_off, msg.safe_direction_indication_forward, msg.safe_direction_indication_backward, msg.safety_limited_speed);
+            ROS_INFO("STO: %d, SDI+: %d, SDI-: %d, SLS_1: %d, , SLS_2: %d", msg.safe_torque_off, msg.safe_direction_indication_forward, msg.safe_direction_indication_backward, msg.safety_limited_speed_1, msg.safety_limited_speed_2);
 #endif
 
             m_safety_msg_mtx.lock();

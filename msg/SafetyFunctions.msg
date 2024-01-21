@@ -1,6 +1,7 @@
 Header header
 bool safe_torque_off
 bool safe_brake_control
-bool safety_limited_speed
+bool safety_limited_speed_1
+bool safety_limited_speed_2
 bool safe_direction_indication_forward
 bool safe_direction_indication_backward

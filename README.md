@@ -238,7 +238,8 @@ This controller manages two ez-Wheel SWD® wheels as a differential kinetic robo
 - **`base_frame`**, type `string`: Frame ID for the moving platform, used in odometry and TFs. `Default = base_link`, (see [REP-150](https://www.ros.org/reps/rep-0105.html) for more info).
 - **`odom_frame`**, type `string`: Frame ID for the `odom` fixed frame used in odometry and TFs. `Default = odom`, (see [REP-150](https://www.ros.org/reps/rep-0105.html) for more info).
 - **`wheel_max_speed_rpm`**, type `double`: Maximum speed allowed in RPM wheel for SWD wheel. If the target speed of one is above this limit, the controller limits the speed of both wheels without changing robot's trajectory. `Default = 75.0`.
-- **`wheel_safety_limited_speed_rpm`**, type `double`: Safety Limited Speed (SLS) in RPM for SWD wheel. If an SLS function is triggered (e.g. from a safety LiDAR), the SWD wheel speed is limited by its firmware. To configure SLS limit, the ROS controller uses this value to send a target speed to the SWD below this threshold. `Default = 40.0`.
+- **`wheel_safety_limited_speed_1_rpm`**, type `double`: Safety Limited Speed 1 (SLS_1) (in RPM), if an SLS_1 signal is detected (from a security LiDAR for example), the motor will be limited internally to the configured SLS_1 limit. The ROS controller uses this value to limit the target speed send to the motor in the SLS_1 case (default `40.0`).
+- **`wheel_safety_limited_speed_2_rpm`**, type `double`: Safety Limited Speed 2 (SLS_2) (in RPM), if an SLS_2 signal is detected (from a security LiDAR for example), the motor will be limited internally to the configured SLS_2 limit. The ROS controller uses this value to limit the target speed send to the motor in the SLS_2 case (default `48.5`).
 - **`wheel_max_delta_speed_rpm`**, type `double`: Maximum allowed delta speed between both SWD wheels (in RPM). If the speed difference between both wheels is above the limit, the controller will limit the speed of the two wheels without changing robot's trajectory. `Default = 37.5` (wheel_max_speed_rpm / 2).
 - **`have_backward_sls`**, type `bool`: Configures if the robot has a backward SLS signal (e.g. from a back-facing security LiDAR). If so, set this parameter to `true`. Otherwise, set the parameter to `false`, and this will limit backward movements to `wheel_safety_limited_speed_rpm` speed. `Default = false`.
 - **`left_encoder_relative_error`**, type `double`: Relative error for left wheel encoder, used to calculate variances and propagate them to calculate the uncertainties in the odometry message. Each encoder acquisition **`DIFF_LEFT_ENCODER`** is modeled as: **`DIFF_LEFT_ENCODER +/- abs(left_encoder_relative_error * DIFF_LEFT_ENCODER)`**. `Default = 0.02` corresponding to 5% of error.
@@ -270,7 +271,8 @@ The value is `True` if the safety function is enabled.
 Header header
 bool safe_torque_off                        # Safe Torque Off (STO)
 bool safe_brake_control                     # Safe Brake Control (SBC)
-bool safety_limited_speed                   # Safety Limited Speed (SLS)
+bool safety_limited_speed_1                 # Safety Limited Speed 1 (SLS_1)
+bool safety_limited_speed_2                 # Safety Limited Speed 2 (SLS_2)
 bool safe_direction_indication_forward      # Safe Direction Indication (positive)
 bool safe_direction_indication_backward     # Safe Direction Indication (negative)
 ```
