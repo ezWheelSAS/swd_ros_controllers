@@ -1,3 +1,13 @@
+swd-ros-controllers (4.1.0) unstable; urgency=medium
+
+  * Fix the apt-key deprecation error
+  * Change some log level messages
+  * Support two levels of SLS
+  * Update README.md : fix sources.list + add SWD-125 product
+  * Add depend.sh
+
+ -- Grégory Mermet <g.mermet@ez-wheel.com>  Wed, 17 Jan 2024 16:51:59 +0100
+
 swd-ros-controllers (4.0.1) unstable; urgency=medium
 
   * Fix nan values into /odom topic when can bus is down

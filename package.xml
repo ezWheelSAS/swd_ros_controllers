@@ -3,7 +3,7 @@
 
 <package format="2">
   <name>swd_ros_controllers</name>
-  <version>4.0.1</version>
+  <version>4.1.0</version>
   <description>Package that interacts with ez-Wheel's SWD DBus services to control 2 wheels for a differential-drive robot.</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
