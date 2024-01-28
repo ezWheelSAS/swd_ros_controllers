@@ -810,19 +810,19 @@ namespace ezw {
                 p_left_speed = static_cast<int32_t>(static_cast<double>(p_left_speed) * speed_ratio);
 
                 if (max_limited && sls_limited) {
-                    ROS_INFO(
+                    ROS_DEBUG(
                         "The target speed exceeds the MAX/SLS_%d maximum speed limit (%d rpm). "
                         "Set speed to (left, right) (%d, %d) rpm",
                         enabled_sls_num, speed_limit, p_left_speed, p_right_speed);
                 }
                 else if (sls_limited) {
-                    ROS_INFO(
+                    ROS_DEBUG(
                         "The target speed exceeds the SLS_%d maximum speed limit (%d rpm). "
                         "Set speed to (left, right) (%d, %d) rpm",
                         enabled_sls_num, speed_limit, p_left_speed, p_right_speed);
                 }
                 else if (max_limited) {
-                    ROS_INFO(
+                    ROS_DEBUG(
                         "The target speed exceeds the maximum speed limit (%d rpm). "
                         "Set speed to (left, right) (%d, %d) rpm",
                         speed_limit, p_left_speed, p_right_speed);
@@ -859,7 +859,7 @@ namespace ezw {
                 // Scale left speed
                 p_left_speed = static_cast<int32_t>(static_cast<double>(p_left_speed) * delta_speed_ratio);
 
-                ROS_INFO(
+                ROS_DEBUG(
                     "The target speed exceeds the maximum delta speed limit (%d rpm). "
                     "Speed set to (left, right) (%d, %d) rpm",
                     delta_speed_limit, p_left_speed, p_right_speed);
@@ -885,7 +885,7 @@ namespace ezw {
                     p_right_speed = (p_right_speed > 0) ? m_right_min_speed_rpm : -m_right_min_speed_rpm;
                 }
 
-                ROS_INFO(
+                ROS_DEBUG(
                     "The target speed falls behind the minimum speed limit (left, right) (%d, %d rpm)."
                     "Set speed to (left, right) (%d, %d) rpm",
                     left_speed, right_speed, p_left_speed, p_right_speed);
