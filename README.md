@@ -40,7 +40,7 @@ echo "deb http://packages.ez-wheel.com:8081/ubuntu/ $(lsb_release -cs) main" | s
 Then, download and add the GPG key. Type the following command:
 
 ```shell
-wget -qO - http://packages.ez-wheel.com:8081/archive.key | sudo apt-key add -
+sudo bash -c "wget -qO - http://packages.ez-wheel.com:8081/archive.key | gpg --dearmor > /etc/apt/trusted.gpg.d/ez-wheel-keyring.gpg"
 ```
 
 Now, you should be able to install ez-Wheel's packages using `Advanced Packaging Tool (apt)`:
